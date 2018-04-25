@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2015
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pontor", "Pontor\Pontor.csproj", "{235F4605-96E6-41EF-B417-8FBF5BB90718}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6EF45E55-0C41-441F-8A46-DE15298D20F1}
+	EndGlobalSection
+EndGlobal
