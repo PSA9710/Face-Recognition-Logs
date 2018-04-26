@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using System.Data.SQLite;
 using AForge.Video.DirectShow;
@@ -49,6 +50,7 @@ namespace Pontor
 
         private void PopulateStreamOptions()
         {
+            //get all connected webcams
             FilterInfoCollection x = new FilterInfoCollection(FilterCategory.VideoInputDevice);
             int id = 0;
             foreach(FilterInfo info in x)
@@ -129,11 +131,20 @@ namespace Pontor
             if (actualImage != null)
             {
                 Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
-                var faces = cascadeClassifier.DetectMultiScale(grayImage, 1.1, 2); //the actual face detection happens here
+                double scaleFactor = Convert.ToDouble(ScaleFactorValue.Text);
+                int minNeigbours = Convert.ToInt32(MinNeigboursValue.Text);
+                var faces = cascadeClassifier.DetectMultiScale(grayImage, scaleFactor, minNeigbours); //the actual face detection happens here
                 foreach (var face in faces)
                 {
+                    //get just the detected area(face)
+                    //ceva.Source = ConvertToImageSource(actualImage.Copy(face).Convert<Gray,byte>().Bitmap);
+
+                    //draw rectangle on detected face
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
 
+
+                    //display name over detected face
+                    CvInvoke.PutText(actualImage,"ceva foarte mare", new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
                 }
             }
             ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
