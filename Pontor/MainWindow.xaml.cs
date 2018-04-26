@@ -10,6 +10,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using System.Data.SQLite;
 using AForge.Video.DirectShow;
+using System.IO;
 
 namespace Pontor
 {
@@ -42,10 +43,35 @@ namespace Pontor
             timer = new DispatcherTimer();
             timer.Tick += new EventHandler(ProcessImage);
             timer.Interval = new TimeSpan(10);
-            var locatie = System.AppDomain.CurrentDomain.BaseDirectory;
-            cascadeClassifier = new CascadeClassifier(locatie + "/haarcascade_frontalface_alt.xml");
+            var location = System.AppDomain.CurrentDomain.BaseDirectory;
+            cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt.xml");
+
+            CheckIfDirectoryExists(location);
             
-            
+        }
+
+        private void CheckIfDirectoryExists(String location)
+        {
+            try
+            {
+                if (Directory.Exists(location + "/pictures"))
+                {
+                    LoadPictures();
+                }
+                else
+                {
+                    Directory.CreateDirectory(location + "/pictures");
+                }
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
+        private void LoadPictures()
+        {
+            throw new NotImplementedException();
         }
 
         private void PopulateStreamOptions()
