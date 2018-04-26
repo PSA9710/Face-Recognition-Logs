@@ -1,25 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using WebEye.Controls.Wpf;
 using System.Drawing;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Emgu.CV;
 using Emgu.CV.Structure;
-using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
+using System.Data.SQLite;
+using AForge.Video.DirectShow;
 
 namespace Pontor
 {
@@ -47,16 +36,27 @@ namespace Pontor
         public MainWindow()
         {
             InitializeComponent();
+            PopulateStreamOptions();
 
             timer = new DispatcherTimer();
             timer.Tick += new EventHandler(ProcessImage);
             timer.Interval = new TimeSpan(10);
             var locatie = System.AppDomain.CurrentDomain.BaseDirectory;
             cascadeClassifier = new CascadeClassifier(locatie + "/haarcascade_frontalface_alt.xml");
-            WebCam = new VideoCapture(0);
-            WebCam.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.Fps, 3);
-            WebCam.ImageGrabbed += WebCam_ImageGrabbed;
             
+            
+        }
+
+        private void PopulateStreamOptions()
+        {
+            FilterInfoCollection x = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            int id = 0;
+            foreach(FilterInfo info in x)
+            {
+                StreamingOptions.Items.Add(id);
+                id++;
+            }
+            StreamingOptions.Items.Add("VIA IP");
         }
 
         private void WebCam_ImageGrabbed(object sender, EventArgs e)
@@ -72,7 +72,22 @@ namespace Pontor
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
-            //  timer.Start();
+            //   timer.Start();
+            if(StreamingOptions.SelectedIndex==-1)
+            {
+                MessageBox.Show("Please select streaming Device");
+                return;
+            }
+            if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
+            {
+                WebCam = new VideoCapture("http://admin:@192.168.0.120:8080/video");
+            }
+            else
+            {
+                int id = Convert.ToInt32(StreamingOptions.SelectedItem);
+                WebCam = new VideoCapture(id);
+            }
+            WebCam.ImageGrabbed += WebCam_ImageGrabbed;
             WebCam.Start();
 
         }
@@ -89,7 +104,7 @@ namespace Pontor
         {
             //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
             ////bitmap = DetectFace(bitmap);
-            //ImgViewer.Source = ReturnImageAsSource(bitmap);
+           // ImgViewer.Source = ConvertToImageSource(bitmap);
             Image<Bgr, byte> actualImage = WebCam.QueryFrame().ToImage<Bgr, byte>();
             if (actualImage != null)
             {
@@ -114,7 +129,7 @@ namespace Pontor
             if (actualImage != null)
             {
                 Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
-                var faces = cascadeClassifier.DetectMultiScale(grayImage, 1.1, 4); //the actual face detection happens here
+                var faces = cascadeClassifier.DetectMultiScale(grayImage, 1.1, 2); //the actual face detection happens here
                 foreach (var face in faces)
                 {
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
