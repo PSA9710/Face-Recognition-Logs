@@ -92,23 +92,25 @@
         <Grid Name="RightSide" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="56*"/>
-                <RowDefinition Height="363*"/>
+                <RowDefinition Height="39*"/>
+                <RowDefinition Height="324*"/>
             </Grid.RowDefinitions>
             <Grid Name="ParameterTunning" Grid.Row="0">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Content="ScaleFactor:"/>
                         <Slider Name="ScaleFactor" Minimum="1.001" Maximum="1.4" LargeChange="0.05" SmallChange="0.05" Width="200" Value="1.2"/>
                         <TextBox Name="ScaleFactorValue" Text="{Binding ElementName=ScaleFactor,Path=Value}" Width="40"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Content="MinimumNeighbours:"/>
-                        <Slider Name="MinNeigbours" Minimum="1" SmallChange="1" Width="200"/>
+                        <Slider Name="MinNeigbours" Minimum="1" SmallChange="1" Width="146" Value="4"/>
                         <TextBox Name="MinNeigboursValue" Text="{Binding ElementName=MinNeigbours,Path=Value}" Width="40"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
-            <Image Name="ceva" Grid.Row="1"/>
+            <ToggleButton Name="ModeSelector" Content="Switch to training mode" Grid.Row="1" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" />
+            <Grid Name="CustomControlContainer" Grid.Row="2"/>
         </Grid>
 
 

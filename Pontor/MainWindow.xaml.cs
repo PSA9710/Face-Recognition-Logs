@@ -11,6 +11,7 @@ using Emgu.CV.Structure;
 using System.Data.SQLite;
 using AForge.Video.DirectShow;
 using System.IO;
+using System.Windows.Controls;
 
 namespace Pontor
 {
@@ -27,12 +28,22 @@ namespace Pontor
         public static extern bool DeleteObject(IntPtr hObject);
 
 
+        public static int  capturesTaken = 0;
+        private static int capturesToBeTaken = 10;
+        public static String pathToSavePictures;
 
+
+
+
+
+        int sizeToBeSaved = 100;//size of the picture wich will be saved
 
         CascadeClassifier cascadeClassifier;
         DispatcherTimer timer;
         //WebCameraControl WebCam;
 
+        TrainingControl trainingControl;
+        PredictControl predictControl;
         VideoCapture WebCam;
 
         public MainWindow()
@@ -47,7 +58,8 @@ namespace Pontor
             cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt.xml");
 
             CheckIfDirectoryExists(location);
-            
+            SwitchToPredictMode();
+            pathToSavePictures = location + "/pictures";
         }
 
         private void CheckIfDirectoryExists(String location)
@@ -62,6 +74,7 @@ namespace Pontor
                 {
                     Directory.CreateDirectory(location + "/pictures");
                 }
+                
             }
             catch(Exception e)
             {
@@ -108,7 +121,7 @@ namespace Pontor
             }
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
-                WebCam = new VideoCapture("http://admin:@192.168.0.120:8080/video");
+                WebCam = new VideoCapture("http://admin:@10.14.10.37:8080/video");
             }
             else
             {
@@ -148,6 +161,8 @@ namespace Pontor
            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
         }
 
+       
+
         private void proc(Bitmap bmp)
         {
             //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
@@ -163,14 +178,18 @@ namespace Pontor
                 foreach (var face in faces)
                 {
                     //get just the detected area(face)
-                    //ceva.Source = ConvertToImageSource(actualImage.Copy(face).Convert<Gray,byte>().Bitmap);
-
+                    var graycopy=actualImage.Copy(face).Convert<Gray, byte>().Resize(sizeToBeSaved,sizeToBeSaved,Inter.Cubic);
+                    if (capturesTaken < capturesToBeTaken && ModeSelector.IsChecked == true)
+                    {
+                        trainingControl.AddPictureToCollection(graycopy);
+                        capturesTaken++;
+                    }
                     //draw rectangle on detected face
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
 
 
                     //display name over detected face
-                    CvInvoke.PutText(actualImage,"ceva foarte mare", new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
+                    CvInvoke.PutText(actualImage,"Person", new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
                 }
             }
             ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
@@ -188,5 +207,50 @@ namespace Pontor
             
         }
 
+        private void ModeSelector_Checked(object sender, RoutedEventArgs e)
+        {
+            
+            try {
+                ModeSelector.Content = "Switch to Predict Mode";
+                if (predictControl != null)
+                    CustomControlContainer.Children.Remove(predictControl);
+                SwitchToTrainingMode();
+            }
+            catch(Exception ex)
+            { MessageBox.Show(ex.ToString()); }
+        }
+
+        
+        
+        private void SwitchToPredictMode()
+        {
+            predictControl = new PredictControl();
+            predictControl.Name = "WorkSpace";
+           
+            CustomControlContainer.Children.Add(predictControl);
+
+        }
+
+        private void SwitchToTrainingMode()
+        {
+            trainingControl = new TrainingControl();
+            trainingControl.Name = "WorkSpace";
+            CustomControlContainer.Children.Add(trainingControl);
+            
+        }
+
+        private void ModelSelector_Unchecked(object sender, RoutedEventArgs e)
+        {
+            
+            try
+            {
+                ModeSelector.Content = "Switch to Training Mode!";
+                if (trainingControl != null)
+                    CustomControlContainer.Children.Remove(trainingControl);
+                SwitchToPredictMode();
+            }
+            catch (Exception ex)
+            { MessageBox.Show(ex.ToString()); }
+        }
     }
 }

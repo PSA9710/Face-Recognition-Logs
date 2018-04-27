@@ -1,0 +1,34 @@
+﻿<UserControl x:Class="Pontor.TrainingControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Pontor"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="43*"/>
+            <RowDefinition Height="7*"/>
+        </Grid.RowDefinitions>
+        <Button Name="SaveDataSet" Content="Save Pictures" Grid.Row="1" Grid.Column="0" Click="SaveDataSet_Click"/>
+        <Button Name="RetakeDataSet" Content="Retake Pictures" Grid.Row="1" Grid.Column="1" Click="RetakeDataSet_Click"/>
+        <Button Name="Cancel" Content="Reset" Grid.Row="1" Grid.Column="3"/>
+        <ScrollViewer Grid.Row="0" Grid.ColumnSpan="2">
+            <WrapPanel Name="CapturesDisplay" />
+        </ScrollViewer>
+        <StackPanel Grid.Column="2">
+            <Label Content="First Name"/>
+            <TextBox Name="FirstNameTextBox"/>
+            <Label Content="Last Name"/>
+            <TextBox Name="LastNameTextBox"/>
+            <Image Height="100" Name="test"/>
+
+        </StackPanel>
+    </Grid>
+</UserControl>
