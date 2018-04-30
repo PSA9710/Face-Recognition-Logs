@@ -29,7 +29,7 @@ namespace Pontor
 
 
         public static int  capturesTaken = 0;
-        private static int capturesToBeTaken = 10;
+        public static int capturesToBeTaken = 100;
         public static String pathToSavePictures;
 
 

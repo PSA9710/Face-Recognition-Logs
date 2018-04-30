@@ -27,7 +27,8 @@
             <TextBox Name="FirstNameTextBox"/>
             <Label Content="Last Name"/>
             <TextBox Name="LastNameTextBox"/>
-            <Image Height="100" Name="test"/>
+            <Label Content="CNP"/>
+            <TextBox Name="CNPTextBox" MaxLength="13"/>
 
         </StackPanel>
     </Grid>

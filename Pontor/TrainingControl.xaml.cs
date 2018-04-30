@@ -29,7 +29,7 @@ namespace Pontor
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
 
-        List<Image<Gray,byte>> images = new List<Image<Gray,byte >>();
+        List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
 
 
         public TrainingControl()
@@ -38,11 +38,11 @@ namespace Pontor
         }
 
 
-        public void AddPictureToCollection(Image<Gray,byte> image )
+        public void AddPictureToCollection(Image<Gray, byte> image)
         {
             images.Add(image);
             ImageSource img = ConvertToImageSource(image.Bitmap);
-            CapturesDisplay.Children.Add(new System.Windows.Controls.Image() { Source=img,Width=50,Height=50});
+            CapturesDisplay.Children.Add(new System.Windows.Controls.Image() { Source = img, Width = 50, Height = 50 });
         }
 
         private ImageSource ConvertToImageSource(Bitmap bmp)
@@ -58,34 +58,103 @@ namespace Pontor
 
         private void RetakeDataSet_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow.capturesTaken = 0; 
+            MainWindow.capturesTaken = 0;
             CapturesDisplay.Children.Clear();
         }
 
         private void SaveDataSet_Click(object sender, RoutedEventArgs e)
         {
-            int id = 1;
-            int piccount = 0;
-            var location = MainWindow.pathToSavePictures+"/";
-            try
+            String firstName = FirstNameTextBox.Text;
+            String lastName = LastNameTextBox.Text;
+            String CNP = CNPTextBox.Text;
+            if (images.Count != MainWindow.capturesToBeTaken)
             {
-                
-                foreach (object image in images)
-                {
-                    SaveImage(image,id,piccount);
-                    piccount++;
-                    
-                }
+                MessageBox.Show("Witchcraft!!! There should be " + MainWindow.capturesToBeTaken.ToString() + "" +
+                    " pictures taken","WIZZARD DETECTED",MessageBoxButton.OK,MessageBoxImage.Warning);
+                return;
             }
-            catch(Exception exc)
+            if (SaveInDatabase(firstName, lastName, CNP))
             {
-                MessageBox.Show(exc.ToString());
+
+                int id = new SqlManager().SQL_GetPersonId(CNP);
+                if (id == -1)
+                {
+                    MessageBox.Show("IMPOSIBLE! The ID is negative! Bring holy water!");
+                    return;
+                }
+                int piccount = 0;
+                var location = MainWindow.pathToSavePictures + "/";
+                try
+                {
+
+                    foreach (object image in images)
+                    {
+                        SaveImage(image, id, piccount);
+                        piccount++;
+
+                    }
+                    ResetAllFields();
+                    MessageBox.Show("Save succesful");
+                }
+                catch (Exception exc)
+                {
+                    MessageBox.Show(exc.ToString());
+                }
             }
         }
 
-        private void SaveImage(object image,int id, int piccount)
+        private void ResetAllFields()
         {
-            Image<Gray, byte> img = image as Image<Gray,byte>;
+            FirstNameTextBox.Text = "";
+            LastNameTextBox.Text = "";
+            CNPTextBox.Text = "";
+            CapturesDisplay.Children.Clear();
+        }
+
+        private bool SaveInDatabase(string firstName, string lastName, string CNP)
+        {
+            if (CheckForEmptyFields(firstName, lastName, CNP))
+            {
+                try
+                {
+                    new SqlManager().SQL_InsertIntoPersons(firstName, lastName, CNP);
+                    return true;
+                }
+                catch(IndexOutOfRangeException e)
+                {
+                    MessageBox.Show("There is 1 Person with same CNP. Please check your information or contact database administrator",
+                     "CNP IN USE", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            return false;
+        }
+
+        private bool CheckForEmptyFields(string firstName, string lastName, string CNP)
+        {
+            if (String.IsNullOrEmpty(firstName))
+            {
+                MessageBox.Show("Field First Name can not be empty");
+                FirstNameTextBox.Focus();
+                return false;
+            }
+            else if (String.IsNullOrEmpty(lastName))
+            {
+                MessageBox.Show("Field First Name can not be empty");
+                LastNameTextBox.Focus();
+                return false;
+            }
+            else if (String.IsNullOrEmpty(CNP))
+            {
+                MessageBox.Show("Field CNP can not be empty");
+                CNPTextBox.Focus();
+                return false;
+            }
+            return true;
+        }
+
+        private void SaveImage(object image, int id, int piccount)
+        {
+            Image<Gray, byte> img = image as Image<Gray, byte>;
             //test.Source = ConvertToImageSource(img.Bitmap);
             Bitmap bmp = img.Bitmap;
             String filePath = "pictures/" + id.ToString();
