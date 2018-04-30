@@ -57,30 +57,24 @@ namespace Pontor
             var location = System.AppDomain.CurrentDomain.BaseDirectory;
             cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt.xml");
 
-            CheckIfDirectoryExists(location);
+            // CheckIfDirectoryExists(location);
+            CreateDirectory(location, "data");
+            CreateDirectory(location, "pictures");
+
+
             SwitchToPredictMode();
             pathToSavePictures = location + "/pictures";
+            new SqlManager().SQL_CheckforDatabase();
         }
 
-        private void CheckIfDirectoryExists(String location)
+        private void CreateDirectory(string location, string folder)
         {
-            try
-            {
-                if (Directory.Exists(location + "/pictures"))
-                {
-                    LoadPictures();
-                }
-                else
-                {
-                    Directory.CreateDirectory(location + "/pictures");
-                }
-                
-            }
-            catch(Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
+            Directory.CreateDirectory(location + "/" + folder);
         }
+
+        
+
+        
 
         private void LoadPictures()
         {

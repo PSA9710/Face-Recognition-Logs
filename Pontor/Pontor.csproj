@@ -98,6 +98,7 @@
     <Compile Include="PredictControl.xaml.cs">
       <DependentUpon>PredictControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SqlManager.cs" />
     <Compile Include="TrainingControl.xaml.cs">
       <DependentUpon>TrainingControl.xaml</DependentUpon>
     </Compile>
