@@ -30,7 +30,7 @@
                     <RowDefinition Height="15*"/>
                 </Grid.RowDefinitions>
                 <Label Content="Video Source:" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <ComboBox Name="StreamingOptions" Grid.Row="0" Grid.Column="1"/>
+                <ComboBox Name="StreamingOptions" Grid.Row="0" Grid.Column="1" SelectedIndex="0"/>
                 <Grid Grid.Row="1" Grid.ColumnSpan="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -47,7 +47,7 @@
                         </Grid.ColumnDefinitions>
                         <Label Content="Username" Grid.Row="0" Grid.Column="0"/>
                         <Label Content="Password" Grid.Row="1" Grid.Column="0"/>
-                        <TextBox Name="UsernameStream" Grid.Row="0" Grid.Column="1"/>
+                        <TextBox Name="UsernameStream" Grid.Row="0" Grid.Column="1" Text="admin"/>
                         <TextBox Name="PasswordStream" Grid.Row="1" Grid.Column="1"/>
                     </Grid>
                     <Grid Grid.Column="1">
@@ -63,10 +63,10 @@
                                 <ColumnDefinition Width="1*"/>
                                 <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Name="IP1" Grid.Column="0"/>
-                            <TextBox Name="IP2" Grid.Column="1"/>
-                            <TextBox Name="IP3" Grid.Column="2"/>
-                            <TextBox Name="IP4" Grid.Column="3"/>
+                            <TextBox Name="IP1" Grid.Column="0" MaxLength="3" Text="192"/>
+                            <TextBox Name="IP2" Grid.Column="1" MaxLength="3" Text="168"/>
+                            <TextBox Name="IP3" Grid.Column="2" MaxLength="3" Text="0"/>
+                            <TextBox Name="IP4" Grid.Column="3" MaxLength="3"/>
                         </Grid>
                     </Grid>
                 </Grid>

@@ -37,7 +37,7 @@ namespace Pontor
         bool imagesFound = false;
         Image<Gray, byte>[] trainingImages;
         int[] personID;
-        EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90,2000);
+        EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90,2500);
 
 
         int sizeToBeSaved = 100;//size of the picture wich will be saved
@@ -158,7 +158,16 @@ namespace Pontor
             }
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
-                WebCam = new VideoCapture("http://admin:@192.168.0.100:8080/video");
+                string url = "http://";
+                url += UsernameStream.Text+":";
+                url += PasswordStream.Text + "@";
+                url += IP1.Text + ".";
+                url += IP2.Text + ".";
+                url += IP3.Text + ".";
+                url += IP4.Text;
+                url += ":8080/video";
+
+                WebCam = new VideoCapture(url);
             }
             else
             {
