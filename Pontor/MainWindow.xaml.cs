@@ -78,14 +78,14 @@ namespace Pontor
 
         }
 
-        private void TrainFaceRecognizer()
+        public void TrainFaceRecognizer()
         {
             faceRecognizer.Train(trainingImages, personID);
             //faceRecognizer.Write("/data/ceva");
             //throw new NotImplementedException();
         }
 
-        private void LoadImages(String location)
+        public void LoadImages(String location)
         {
             location += "/pictures";
             int count = Directory.GetFiles(location).Length;
@@ -302,6 +302,8 @@ namespace Pontor
                 if (trainingControl != null)
                     CustomControlContainer.Children.Remove(trainingControl);
                 SwitchToPredictMode();
+                LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
+                TrainFaceRecognizer();
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }

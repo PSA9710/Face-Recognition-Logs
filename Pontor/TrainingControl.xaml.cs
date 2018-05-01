@@ -31,6 +31,7 @@ namespace Pontor
 
         List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
 
+        
 
         public TrainingControl()
         {
@@ -96,7 +97,9 @@ namespace Pontor
                     }
                     ResetAllFields();
                     images.Clear();
+                    
                     MessageBox.Show("Save succesful");
+
                 }
                 catch (Exception exc)
                 {
