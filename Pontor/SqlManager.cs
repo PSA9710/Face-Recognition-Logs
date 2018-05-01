@@ -124,7 +124,7 @@ namespace Pontor
                     return name;
                 }
             }
-                return null;
+                return "UNKNOWN";
         }
     }
 }

@@ -71,6 +71,7 @@ namespace Pontor
             {
                 MessageBox.Show("Witchcraft!!! There should be " + MainWindow.capturesToBeTaken.ToString() + "" +
                     " pictures taken","WIZZARD DETECTED",MessageBoxButton.OK,MessageBoxImage.Warning);
+                MessageBox.Show(images.Count.ToString());
                 return;
             }
             if (SaveInDatabase(firstName, lastName, CNP))
@@ -94,6 +95,7 @@ namespace Pontor
 
                     }
                     ResetAllFields();
+                    images.Clear();
                     MessageBox.Show("Save succesful");
                 }
                 catch (Exception exc)

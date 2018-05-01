@@ -30,14 +30,14 @@ namespace Pontor
         public static extern bool DeleteObject(IntPtr hObject);
 
 
-        public static int  capturesTaken = 0;
+        public static int capturesTaken = 0;
         public static int capturesToBeTaken = 100;
         public static String pathToSavePictures;
 
         bool imagesFound = false;
         Image<Gray, byte>[] trainingImages;
         int[] personID;
-        EigenFaceRecognizer faceRecognizer=new EigenFaceRecognizer();
+        EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90,2000);
 
 
         int sizeToBeSaved = 100;//size of the picture wich will be saved
@@ -71,7 +71,7 @@ namespace Pontor
             new SqlManager().SQL_CheckforDatabase();
 
             LoadImages(location);
-            if(imagesFound)
+            if (imagesFound)
             {
                 TrainFaceRecognizer();
             }
@@ -92,9 +92,9 @@ namespace Pontor
             trainingImages = new Image<Gray, byte>[count];
             personID = new int[count];
             int i = 0;
-            foreach(string file in Directory.EnumerateFiles(location,"*.bmp"))
+            foreach (string file in Directory.EnumerateFiles(location, "*.bmp"))
             {
-                trainingImages[i]=new Image<Gray, byte>(file);
+                trainingImages[i] = new Image<Gray, byte>(file);
                 string filename = Path.GetFileName(file);
                 var fileSplit = filename.Split('_');
                 int personid = Convert.ToInt32(fileSplit[0]);
@@ -102,7 +102,7 @@ namespace Pontor
                 i++;
                 imagesFound = true;
             }
-            if(!imagesFound)
+            if (!imagesFound)
             {
                 MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
                 ModeSelector.IsChecked = true;
@@ -115,9 +115,9 @@ namespace Pontor
             Directory.CreateDirectory(location + "/" + folder);
         }
 
-        
 
-        
+
+
 
         private void LoadPictures()
         {
@@ -129,7 +129,7 @@ namespace Pontor
             //get all connected webcams
             FilterInfoCollection x = new FilterInfoCollection(FilterCategory.VideoInputDevice);
             int id = 0;
-            foreach(FilterInfo info in x)
+            foreach (FilterInfo info in x)
             {
                 StreamingOptions.Items.Add(id);
                 id++;
@@ -144,14 +144,14 @@ namespace Pontor
             this.Dispatcher.Invoke(() =>
             {
                 proc(m.Bitmap);
-               // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
+                // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
             });
         }
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
             //   timer.Start();
-            if(StreamingOptions.SelectedIndex==-1)
+            if (StreamingOptions.SelectedIndex == -1)
             {
                 MessageBox.Show("Please select streaming Device");
                 return;
@@ -174,7 +174,9 @@ namespace Pontor
         {
             //timer.Stop();
             WebCam.Stop();
-           
+
+
+
         }
 
 
@@ -182,7 +184,7 @@ namespace Pontor
         {
             //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
             ////bitmap = DetectFace(bitmap);
-           // ImgViewer.Source = ConvertToImageSource(bitmap);
+            // ImgViewer.Source = ConvertToImageSource(bitmap);
             Image<Bgr, byte> actualImage = WebCam.QueryFrame().ToImage<Bgr, byte>();
             if (actualImage != null)
             {
@@ -191,14 +193,14 @@ namespace Pontor
                 foreach (var face in faces)
                 {
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
-                    
+
                 }
             }
             ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
-           // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
+            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
         }
 
-       
+
 
         private void proc(Bitmap bmp)
         {
@@ -215,7 +217,7 @@ namespace Pontor
                 foreach (var face in faces)
                 {
                     //get just the detected area(face)
-                    var graycopy=actualImage.Copy(face).Convert<Gray, byte>().Resize(sizeToBeSaved,sizeToBeSaved,Inter.Cubic);
+                    var graycopy = actualImage.Copy(face).Convert<Gray, byte>().Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
                     if (capturesTaken < capturesToBeTaken && ModeSelector.IsChecked == true)
                     {
                         trainingControl.AddPictureToCollection(graycopy);
@@ -224,10 +226,14 @@ namespace Pontor
                     //draw rectangle on detected face
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
 
-                    var result = faceRecognizer.Predict(graycopy);
+                    string personName = "UNKNOWN";
+                    if (imagesFound)
+                    {
+                        FaceRecognizer.PredictionResult result = faceRecognizer.Predict(graycopy);
+                        personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                    }
                     //display name over detected face
-                    var personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
-                    CvInvoke.PutText(actualImage,personName, new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
+                    CvInvoke.PutText(actualImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                 }
             }
             ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
@@ -236,35 +242,36 @@ namespace Pontor
 
         private ImageSource ConvertToImageSource(Bitmap bmp)
         {
-            
+
             IntPtr hBitmap = bmp.GetHbitmap();
             ImageSource wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             bmp.Dispose();
             DeleteObject(hBitmap);
             return wpfBitmap;
-            
+
         }
 
         private void ModeSelector_Checked(object sender, RoutedEventArgs e)
         {
-            
-            try {
+
+            try
+            {
                 ModeSelector.Content = "Switch to Predict Mode";
                 if (predictControl != null)
                     CustomControlContainer.Children.Remove(predictControl);
                 SwitchToTrainingMode();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }
         }
 
-        
-        
+
+
         private void SwitchToPredictMode()
         {
             predictControl = new PredictControl();
             predictControl.Name = "WorkSpace";
-           
+
             CustomControlContainer.Children.Add(predictControl);
 
         }
@@ -274,7 +281,7 @@ namespace Pontor
             trainingControl = new TrainingControl();
             trainingControl.Name = "WorkSpace";
             CustomControlContainer.Children.Add(trainingControl);
-            
+
         }
 
         private void ModelSelector_Unchecked(object sender, RoutedEventArgs e)
