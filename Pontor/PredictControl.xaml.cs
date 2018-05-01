@@ -12,6 +12,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Face;
+using Emgu.CV.Structure;
+
 
 namespace Pontor
 {
@@ -20,9 +25,19 @@ namespace Pontor
     /// </summary>
     public partial class PredictControl : UserControl
     {
+
+        List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
+
         public PredictControl()
         {
             InitializeComponent();
+            this.images = images;
+        }
+
+        public string Predict()
+        {
+            
+            return null;
         }
     }
 }

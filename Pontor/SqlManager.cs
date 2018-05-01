@@ -107,5 +107,24 @@ namespace Pontor
             }
             return -1;
         }
+
+        public string SQL_GetPersonName(string id)
+        {
+            int ID = Convert.ToInt32(id);
+            using (SQLiteConnection con = new SQLiteConnection(connectionString))
+            using (SQLiteCommand cmd = new SQLiteCommand(con))
+            {
+                con.Open();
+                cmd.CommandText = "SELECT firstname,lastname FROM persons WHERE personID=$ID";
+                cmd.Parameters.AddWithValue("$ID", ID);
+                SQLiteDataReader reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    string name = reader["firstname"].ToString() + " "+reader["lastname"].ToString();
+                    return name;
+                }
+            }
+                return null;
+        }
     }
 }

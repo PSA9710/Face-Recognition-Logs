@@ -12,6 +12,8 @@ using System.Data.SQLite;
 using AForge.Video.DirectShow;
 using System.IO;
 using System.Windows.Controls;
+using System.Collections.Generic;
+using Emgu.CV.Face;
 
 namespace Pontor
 {
@@ -32,8 +34,10 @@ namespace Pontor
         public static int capturesToBeTaken = 100;
         public static String pathToSavePictures;
 
-
-
+        bool imagesFound = false;
+        Image<Gray, byte>[] trainingImages;
+        int[] personID;
+        EigenFaceRecognizer faceRecognizer=new EigenFaceRecognizer();
 
 
         int sizeToBeSaved = 100;//size of the picture wich will be saved
@@ -65,6 +69,45 @@ namespace Pontor
             SwitchToPredictMode();
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
+
+            LoadImages(location);
+            if(imagesFound)
+            {
+                TrainFaceRecognizer();
+            }
+
+        }
+
+        private void TrainFaceRecognizer()
+        {
+            faceRecognizer.Train(trainingImages, personID);
+            //faceRecognizer.Write("/data/ceva");
+            //throw new NotImplementedException();
+        }
+
+        private void LoadImages(String location)
+        {
+            location += "/pictures";
+            int count = Directory.GetFiles(location).Length;
+            trainingImages = new Image<Gray, byte>[count];
+            personID = new int[count];
+            int i = 0;
+            foreach(string file in Directory.EnumerateFiles(location,"*.bmp"))
+            {
+                trainingImages[i]=new Image<Gray, byte>(file);
+                string filename = Path.GetFileName(file);
+                var fileSplit = filename.Split('_');
+                int personid = Convert.ToInt32(fileSplit[0]);
+                personID[i] = personid;
+                i++;
+                imagesFound = true;
+            }
+            if(!imagesFound)
+            {
+                MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModeSelector.IsChecked = true;
+            }
+            //throw new NotImplementedException();
         }
 
         private void CreateDirectory(string location, string folder)
@@ -115,7 +158,7 @@ namespace Pontor
             }
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
-                WebCam = new VideoCapture("http://admin:@10.14.10.37:8080/video");
+                WebCam = new VideoCapture("http://admin:@192.168.0.100:8080/video");
             }
             else
             {
@@ -181,9 +224,10 @@ namespace Pontor
                     //draw rectangle on detected face
                     actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
 
-
+                    var result = faceRecognizer.Predict(graycopy);
                     //display name over detected face
-                    CvInvoke.PutText(actualImage,"Person", new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
+                    var personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                    CvInvoke.PutText(actualImage,personName, new System.Drawing.Point(face.X - 2, face.Y - 2),FontFace.HersheyComplex,1,new Bgr(0,255,0).MCvScalar);
                 }
             }
             ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
