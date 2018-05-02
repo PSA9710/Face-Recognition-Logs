@@ -61,6 +61,7 @@ namespace Pontor
         {
             MainWindow.capturesTaken = 0;
             CapturesDisplay.Children.Clear();
+            images.Clear();
         }
 
         private void SaveDataSet_Click(object sender, RoutedEventArgs e)
