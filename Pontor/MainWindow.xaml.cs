@@ -14,6 +14,7 @@ using System.IO;
 using System.Windows.Controls;
 using System.Collections.Generic;
 using Emgu.CV.Face;
+using System.Threading;
 
 namespace Pontor
 {
@@ -50,13 +51,20 @@ namespace Pontor
         PredictControl predictControl;
         VideoCapture WebCam;
 
+        bool isPersonInRange = false;
+        bool detectFaces = false;
+
+
         public MainWindow()
         {
             InitializeComponent();
             PopulateStreamOptions();
-            
+
 
             predictControl = new PredictControl(ConsoleOutput);
+            predictControl.MessageRecieved += new EventHandler(MessageRecieved);
+
+
 
             timer = new DispatcherTimer();
             timer.Tick += new EventHandler(ProcessImage);
@@ -73,26 +81,51 @@ namespace Pontor
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
 
-            /* LoadImages(location);
-             if (imagesFound)
-             {
-                 TrainFaceRecognizer();
-             }*/
+            Thread t = new Thread(() =>
+              {
+                  LoadImages(location);
+                  if (imagesFound)
+                  {
+                      TrainFaceRecognizer();
+                  }
+              });
+            t.Start();
 
 
         }
 
+        private void MessageRecieved(object sender, EventArgs e)
+        {
+            var message = predictControl.message;
+            if (message == "R")
+            {
+                detectFaces = false;
+            }
+            else if (message == "Y")
+            {
+                detectFaces = true;
+            }
+        }
+
         public void TrainFaceRecognizer()
         {
-            //   faceRecognizer.Train(trainingImages, personID);
+            Thread.Sleep(500);
+            WriteToConsole("FaceRecognizer : Training...");
+            faceRecognizer.Train(trainingImages, personID);
             //faceRecognizer.Write("/data/ceva");
             //throw new NotImplementedException();
         }
 
         public void LoadImages(String location)
         {
+            
             location += "/pictures";
             int count = Directory.GetFiles(location).Length;
+            if(count>0)
+            {
+                WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images." +
+                    "\nFaceRecognizer : Loading Images...");
+            }
             trainingImages = new Image<Gray, byte>[count];
             personID = new int[count];
             int i = 0;
@@ -111,7 +144,6 @@ namespace Pontor
                 MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
                 ModeSelector.IsChecked = true;
             }
-            //throw new NotImplementedException();
         }
 
         private void CreateDirectory(string location, string folder)
@@ -154,7 +186,6 @@ namespace Pontor
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
-            //   timer.Start();
             if (StreamingOptions.SelectedIndex == -1)
             {
                 MessageBox.Show("Please select streaming Device");
@@ -172,6 +203,7 @@ namespace Pontor
                 url += ":8080/video";
 
                 WebCam = new VideoCapture(url);
+                MessageBox.Show("OK");
             }
             else
             {
@@ -185,11 +217,7 @@ namespace Pontor
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            //timer.Stop();
             WebCam.Stop();
-
-
-
         }
 
 
@@ -221,7 +249,7 @@ namespace Pontor
             ////bitmap = DetectFace(bitmap);
             //ImgViewer.Source = ReturnImageAsSource(bitmap);
             Image<Bgr, byte> actualImage = new Image<Bgr, byte>(bmp);
-            if (actualImage != null)
+            if (actualImage != null && detectFaces)
             {
                 Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
                 double scaleFactor = Convert.ToDouble(ScaleFactorValue.Text);
@@ -319,9 +347,11 @@ namespace Pontor
 
         private void WriteToConsole(string message)
         {
-
-            ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
-            ConsoleOutput.Content += message+"\n";
+            Dispatcher.Invoke(() =>
+            {
+                ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
+                ConsoleOutput.Content += message + "\n";
+            });
         }
     }
 }

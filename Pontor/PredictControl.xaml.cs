@@ -37,6 +37,11 @@ namespace Pontor
         private string bluetoothDeviceName;
         private string bluetoothDevicePort;
 
+
+        public String message;
+        public event EventHandler MessageRecieved;
+
+
         public PredictControl(Label label)
         {
             InitializeComponent();
@@ -90,7 +95,7 @@ namespace Pontor
             try
             {
                 serialPort = new SerialPort(bluetoothDevice, 9600);
-                serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageRecieved);
+                serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
                 serialPort.NewLine = "\r\n";
                 WriteToConsole("Atempting to connect to "+bluetoothDeviceName+"...");
                 serialPort.Open();
@@ -110,27 +115,27 @@ namespace Pontor
             }
         }
 
-        private void MessageRecieved(object sender, SerialDataReceivedEventArgs e)
+        private void MessageReciever(object sender, SerialDataReceivedEventArgs e)
         {
-            var message = serialPort.ReadLine();
+            message = serialPort.ReadLine();
             //MessageBox.Show(message);
             if (!isBluetoothConnected)
             {
-                CheckIfCorrectBluetooth(message);
+                CheckIfCorrectBluetooth();
             }
-            ProcessMessage(message);
+            ProcessMessage();
 
         }
 
-        private void ProcessMessage(string message)
+        private void ProcessMessage()
         {
             if(message.Length==1)
             {
-                LEDMessage(message);
+                LEDMessage();
             }
         }
 
-        private void LEDMessage(string message)
+        private void LEDMessage()
         {
             Dispatcher.Invoke(() => { 
             if (message == "R")
@@ -145,11 +150,13 @@ namespace Pontor
             {
                 LED.Fill = new SolidColorBrush(Colors.Lime);
             }
+                if (MessageRecieved != null)
+                    MessageRecieved(this, EventArgs.Empty);
         });
 
         }
 
-        private void CheckIfCorrectBluetooth(string message)
+        private void CheckIfCorrectBluetooth()
         {
             //if (message.Contains("ROOT"))
             if (message == "YOU ARE ROOT")
