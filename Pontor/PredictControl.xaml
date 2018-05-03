@@ -13,9 +13,5 @@
         </Grid.RowDefinitions>
         <CheckBox Content="Use with Arduino" Grid.Row="0"/>
         <ComboBox Name="BluetoothDevicesList" Width="100" SelectionChanged="BluetoothDevicesList_SelectionChanged" IsEnabled="False" Grid.Row="0"/>
-        <ScrollViewer Grid.Row="1">
-            <Label Name="ConsoleOutput" Background="Black" Foreground="White"/>
-
-        </ScrollViewer>
     </Grid>
 </UserControl>

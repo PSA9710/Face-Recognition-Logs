@@ -6,17 +6,21 @@
         xmlns:local="clr-namespace:Pontor"
         xmlns:wpf="clr-namespace:WebEye.Controls.Wpf;assembly=WebEye.Controls.Wpf.WebCameraControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Closing="Window_Closing">
+        Title="MainWindow" Height="450" Width="800" Closing="Window_Closing" MinWidth="1000" MinHeight="1000">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Column="0">
+        <Grid Grid.Column="0" Grid.Row="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="297*"/>
-                <RowDefinition Height="83*"/>
-                <RowDefinition Height="39*"/>
+                <RowDefinition Height="85*"/>
+                <RowDefinition Height="10*"/>
+                <RowDefinition Height="5*"/>
             </Grid.RowDefinitions>
             <!--<wpf:WebCameraControl Name="WebCam" Grid.Row="0"  />-->
             <Image Grid.Row="0" x:Name="ImgViewer" />
@@ -81,7 +85,7 @@
             </Grid>
 
         </Grid>
-        <Grid Grid.Column="1" Margin="0,393,0,0" >
+        <Grid Grid.Column="1" Margin="0,393,0,0" Grid.RowSpan="2" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="53*"/>
                 <RowDefinition Height="7*"/>
@@ -89,7 +93,7 @@
             <Image Name="test" HorizontalAlignment="Left" Height="100" Margin="216,161,0,0" VerticalAlignment="Top" Width="100"/>
 
         </Grid>
-        <Grid Name="RightSide" Grid.Column="1">
+        <Grid Name="RightSide" Grid.Column="1" Grid.Row="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="56*"/>
                 <RowDefinition Height="39*"/>
@@ -112,7 +116,15 @@
             <ToggleButton Name="ModeSelector" Content="Switch to training mode" Grid.Row="1" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" />
             <Grid Name="CustomControlContainer" Grid.Row="2"/>
         </Grid>
-
-
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" Background="Black">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="9*"/>
+            </Grid.RowDefinitions>
+            <Label Grid.Row="0"  Content="CONSOLE OUTPUT" Foreground="#FF00FF17" Background="#FF258DA4" HorizontalContentAlignment="Left" Padding="10,0,0,0" UseLayoutRounding="True" FontSize="16" FontWeight="Bold"/>
+            <ScrollViewer Name="ConsoleScrollBar" Grid.Row="1" >
+                <Label Name="ConsoleOutput" Foreground="White" FontSize="14" />
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>

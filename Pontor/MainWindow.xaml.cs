@@ -37,7 +37,7 @@ namespace Pontor
         bool imagesFound = false;
         Image<Gray, byte>[] trainingImages;
         int[] personID;
-        EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90,2500);
+        EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90, 2500);
 
 
         int sizeToBeSaved = 100;//size of the picture wich will be saved
@@ -46,14 +46,17 @@ namespace Pontor
         DispatcherTimer timer;
         //WebCameraControl WebCam;
 
-        TrainingControl trainingControl=new TrainingControl();
-        PredictControl predictControl=new PredictControl();
+        TrainingControl trainingControl = new TrainingControl();
+        PredictControl predictControl;
         VideoCapture WebCam;
 
         public MainWindow()
         {
             InitializeComponent();
             PopulateStreamOptions();
+            
+
+            predictControl = new PredictControl(ConsoleOutput);
 
             timer = new DispatcherTimer();
             timer.Tick += new EventHandler(ProcessImage);
@@ -70,17 +73,18 @@ namespace Pontor
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
 
-           /* LoadImages(location);
-            if (imagesFound)
-            {
-                TrainFaceRecognizer();
-            }*/
+            /* LoadImages(location);
+             if (imagesFound)
+             {
+                 TrainFaceRecognizer();
+             }*/
+
 
         }
 
         public void TrainFaceRecognizer()
         {
-         //   faceRecognizer.Train(trainingImages, personID);
+            //   faceRecognizer.Train(trainingImages, personID);
             //faceRecognizer.Write("/data/ceva");
             //throw new NotImplementedException();
         }
@@ -159,7 +163,7 @@ namespace Pontor
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
                 string url = "http://";
-                url += UsernameStream.Text+":";
+                url += UsernameStream.Text + ":";
                 url += PasswordStream.Text + "@";
                 url += IP1.Text + ".";
                 url += IP2.Text + ".";
@@ -284,14 +288,14 @@ namespace Pontor
 
         private void SwitchToTrainingMode()
         {
-            
+
             CustomControlContainer.Children.Add(trainingControl);
 
         }
 
         private void ModelSelector_Unchecked(object sender, RoutedEventArgs e)
         {
-            
+
             try
             {
                 ModeSelector.Content = "Switch to Training Mode!";
@@ -307,7 +311,17 @@ namespace Pontor
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            predictControl.serialPort.Close();
+            if (predictControl.serialPort != null && predictControl.serialPort.IsOpen)
+            {
+                predictControl.serialPort.Close();
+            }
+        }
+
+        private void WriteToConsole(string message)
+        {
+
+            ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
+            ConsoleOutput.Content += message+"\n";
         }
     }
 }

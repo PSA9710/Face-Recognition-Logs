@@ -33,9 +33,11 @@ namespace Pontor
         public SerialPort serialPort;
         bool isBluetoothConnected = false;
         Dictionary<String, String> bluetoothDevices = new Dictionary<string, string>();
-        public PredictControl()
+        Label ConsoleOutput;
+        public PredictControl(Label label)
         {
             InitializeComponent();
+            ConsoleOutput = label;
             Thread t = new Thread(() => { PopulateComboBoxWithSerialPorts(); });
             t.Start();
 
@@ -64,7 +66,7 @@ namespace Pontor
             if (BluetoothDevicesList.SelectedIndex != -1)
             {
                 var bluetoothDevice = bluetoothDevices[BluetoothDevicesList.SelectedValue.ToString()];
-                ConsoleOutput.Content += "Selected " + bluetoothDevice + "\n";
+                WriteToConsole("Selected " + bluetoothDevice);
                 Thread t = new Thread(() => ConnectToComPort(bluetoothDevice));
                 t.Start();
             }
@@ -81,10 +83,10 @@ namespace Pontor
                 serialPort = new SerialPort(bluetoothDevice, 9600);
                 serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageRecieved);
                 serialPort.NewLine = "\r\n";
-                Dispatcher.Invoke(() => { ConsoleOutput.Content += "Atempting to connect...\n"; });
+                WriteToConsole("Atempting to connect...");
                 serialPort.Open();
                 serialPort.Write("WHO AM I");
-                Dispatcher.Invoke(() => { ConsoleOutput.Content += "Connection opened\n"; });
+                WriteToConsole("Connection opened");
                 isBluetoothConnected = false;
             }
             catch (Exception e)
@@ -115,10 +117,7 @@ namespace Pontor
             //if (message.Contains("ROOT"))
             if (message == "YOU ARE ROOT")
             {
-                Dispatcher.Invoke(() =>
-                {
-                    ConsoleOutput.Content += "Connection succesful!\n";
-                });
+                WriteToConsole("Connection succesful");
                 isBluetoothConnected = true;
             }
             else
@@ -130,13 +129,11 @@ namespace Pontor
 
         private void RemoveComPort()
         {
-            var s = "Connected to the wrong device\n";
+            var s = "Connected to the wrong device";
+            WriteToConsole(s);
             if (serialPort.IsOpen)
                 serialPort.Close();
-            Dispatcher.Invoke(() =>
-            {
-                ConsoleOutput.Content += s;
-            });
+            
 
         }
 
@@ -166,6 +163,16 @@ namespace Pontor
                 }
             }
             return null;
+        }
+
+
+        private void WriteToConsole(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
+                ConsoleOutput.Content += message + "\n";
+            });
         }
     }
 }
