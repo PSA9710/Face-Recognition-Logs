@@ -7,6 +7,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Windows;
 
+
 namespace Pontor
 {
     class SqlManager

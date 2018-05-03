@@ -46,8 +46,8 @@ namespace Pontor
         DispatcherTimer timer;
         //WebCameraControl WebCam;
 
-        TrainingControl trainingControl;
-        PredictControl predictControl;
+        TrainingControl trainingControl=new TrainingControl();
+        PredictControl predictControl=new PredictControl();
         VideoCapture WebCam;
 
         public MainWindow()
@@ -70,17 +70,17 @@ namespace Pontor
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
 
-            LoadImages(location);
+           /* LoadImages(location);
             if (imagesFound)
             {
                 TrainFaceRecognizer();
-            }
+            }*/
 
         }
 
         public void TrainFaceRecognizer()
         {
-            faceRecognizer.Train(trainingImages, personID);
+         //   faceRecognizer.Train(trainingImages, personID);
             //faceRecognizer.Write("/data/ceva");
             //throw new NotImplementedException();
         }
@@ -278,17 +278,13 @@ namespace Pontor
 
         private void SwitchToPredictMode()
         {
-            predictControl = new PredictControl();
-            predictControl.Name = "WorkSpace";
-
             CustomControlContainer.Children.Add(predictControl);
 
         }
 
         private void SwitchToTrainingMode()
         {
-            trainingControl = new TrainingControl();
-            trainingControl.Name = "WorkSpace";
+            
             CustomControlContainer.Children.Add(trainingControl);
 
         }
@@ -307,6 +303,11 @@ namespace Pontor
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            predictControl.serialPort.Close();
         }
     }
 }
