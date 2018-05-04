@@ -17,6 +17,7 @@ using Emgu.CV.Face;
 using System.Threading;
 using Emgu.CV.Cuda;
 using Emgu.CV.UI;
+using System.Threading.Tasks;
 
 namespace Pontor
 {
@@ -45,10 +46,8 @@ namespace Pontor
 
         int sizeToBeSaved = 100;//size of the picture wich will be saved
 
-        CascadeClassifier cascadeClassifier;
-        DispatcherTimer timer;
         //WebCameraControl WebCam;
-        String cudaClassifierFileName;
+
 
         TrainingControl trainingControl = new TrainingControl();
         PredictControl predictControl;
@@ -59,11 +58,16 @@ namespace Pontor
         bool isTraining = false;
         bool isGpuEnabled = false;
         bool isCudaEnabled = false;
+        bool isRegistering = false;
 
-        double scaleFactor ;
-        int minNeigbours ;
+        double scaleFactor;
+        int minNeigbours;
 
         String appLocation;
+        String cpuClassifierFileName;
+        String cudaClassifierFileName;
+
+
 
         public MainWindow()
         {
@@ -76,12 +80,9 @@ namespace Pontor
 
 
 
-            timer = new DispatcherTimer();
-            timer.Tick += new EventHandler(ProcessImage);
-            timer.Interval = new TimeSpan(10);
             var location = System.AppDomain.CurrentDomain.BaseDirectory;
             appLocation = location;
-            cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt_CPU.xml");
+            cpuClassifierFileName = location + "/haarcascade_frontalface_alt_CPU.xml";
             cudaClassifierFileName = location + "/haarcascade_frontalface_alt.xml";
             CreateDirectory(location, "data");
             CreateDirectory(location, "pictures");
@@ -125,13 +126,14 @@ namespace Pontor
             }
         }
 
+        #region FACERECOGNIZER
         public void TrainFaceRecognizer()
         {
             Thread t = new Thread(() =>
             {
                 Thread.Sleep(500);
                 WriteToConsole("FaceRecognizer : Training...");
-                isTraining = true;
+                
                 //Dispatcher.Invoke
                 faceRecognizer.Train(trainingImages, personID);
                 WriteToConsole("FaceRecognizer : Finished Training");
@@ -144,6 +146,7 @@ namespace Pontor
 
         public void LoadImages(String location)
         {
+            isTraining = true;
             Thread t = new Thread(() =>
               {
                   location += "/pictures";
@@ -180,6 +183,7 @@ namespace Pontor
             t.Start();
 
         }
+        #endregion
 
         private void CreateDirectory(string location, string folder)
         {
@@ -250,34 +254,8 @@ namespace Pontor
             WebCam.Stop();
         }
 
-
-        private void ProcessImage(object sender, EventArgs e)
-        {
-            //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
-            ////bitmap = DetectFace(bitmap);
-            // ImgViewer.Source = ConvertToImageSource(bitmap);
-            Image<Bgr, byte> actualImage = WebCam.QueryFrame().ToImage<Bgr, byte>();
-            if (actualImage != null)
-            {
-                Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
-                var faces = cascadeClassifier.DetectMultiScale(grayImage, 1.1, 4); //the actual face detection happens here
-                foreach (var face in faces)
-                {
-                    actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
-
-                }
-            }
-            //ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
-            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
-        }
-
-
-
         private void proc(Mat bmp)
         {
-            //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
-            ////bitmap = DetectFace(bitmap);
-            //ImgViewer.Source = ReturnImageAsSource(bitmap);
             if (isCudaEnabled && isGpuEnabled)
             {
                 ProcessWithGPU(bmp);
@@ -286,8 +264,9 @@ namespace Pontor
             {
                 ProcessWithCPU(bmp);
             }
-            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
         }
+
+        #region GPU PROCESSING
 
         private void ProcessWithGPU(Mat bmp)
         {
@@ -300,7 +279,20 @@ namespace Pontor
                     {
                         foreach (Rectangle face in faces)
                         {
-                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);
+                            using (var graycopy = capturedImage.Convert<Gray,byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                            {
+                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+                                if (isRegistering)
+                                {
+                                    AddPicturesToCollection(graycopy);
+                                }
+                                else
+                                {
+                                    var personName = PredictFace(graycopy);
+                                    //place name of the person on the image
+                                    CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
+                                }
+                            }
                         }
                         imageDisplay.Image = capturedImage;
                     }
@@ -321,59 +313,113 @@ namespace Pontor
             }
         }
 
+        #endregion
+        #region CPU PROCESSING
+        private void ProcessWithCPU(Mat bmp)
+        {
+            using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
+            {
+                using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
+                {
+                    Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
+                    foreach (Rectangle face in faces)
+                    {
+                        using (var graycopy = grayCapturedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                        {
+                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+                            if (isRegistering)
+                            {
+                                AddPicturesToCollection(graycopy);
+                            }
+                            else
+                            {
+                                var personName = PredictFace(graycopy);
+                                //place name of the person on the image
+                                CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
+                            }
+                        }
+                    }
+                    imageDisplay.Image = capturedImage;
+                }
+            }
+        }
+
+        private Rectangle[] FindFacesUsingCPU(Image<Gray, byte> grayCapturedImage)
+        {
+            using (CascadeClassifier face = new CascadeClassifier(cpuClassifierFileName))
+            {
+                var faces = face.DetectMultiScale(grayCapturedImage, scaleFactor, minNeigbours);
+                return faces;
+            }
+        }
+        #endregion
+
+        private void AddPicturesToCollection(Image<Gray, byte> graycopy)
+        {
+            if(capturesTaken<capturesToBeTaken)
+            {
+                capturesTaken++;
+                trainingControl.AddPictureToCollection(graycopy);
+            }
+        }
+
+        private String PredictFace(Image<Gray, byte> image)
+        {
+            String personName;
+            if (!isTraining)
+            {
+                var result = faceRecognizer.Predict(image);
+                personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+            }
+            else
+            {
+                personName = "IN-TRAINING";
+            }
+            return personName;
+        }
+
 
         //private void ProcessWithCPU(Mat bmp)
         //{
-        //    using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
+        //    Image<Bgr, byte> actualImage = new Image<Bgr, byte>(bmp.Bitmap);
+        //    if (actualImage != null && detectFaces)
         //    {
-        //        using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
+        //        Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
+        //        double scaleFactor = Convert.ToDouble(ScaleFactorValue.Text);
+        //        int minNeigbours = Convert.ToInt32(MinNeigboursValue.Text);
+        //        var faces = cascadeClassifier.DetectMultiScale(grayImage, scaleFactor, minNeigbours); //the actual face detection happens here
+        //        foreach (var face in faces)
         //        {
+        //            //get just the detected area(face)
+        //            var graycopy = actualImage.Copy(face).Convert<Gray, byte>().Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
+        //            if (capturesTaken < capturesToBeTaken && ModeSelector.IsChecked == true)
+        //            {
+        //                trainingControl.AddPictureToCollection(graycopy);
+        //                capturesTaken++;
+        //            }
+        //            //draw rectangle on detected face
+        //            actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
 
+        //            string personName = "UNKNOWN";
+        //            if (imagesFound)
+        //            {
+        //                if (!isTraining)
+        //                {
+        //                    FaceRecognizer.PredictionResult result = faceRecognizer.Predict(graycopy);
+        //                    personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+        //                }
+        //                else
+        //                {
+        //                    personName = "In Training";
+        //                }
+        //            }
+        //            //display name over detected face
+        //            CvInvoke.PutText(actualImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
         //        }
         //    }
+        //    imageDisplay.Image = actualImage;
+        //    // ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
         //}
-
-        private void ProcessWithCPU(Mat bmp)
-        {
-            Image<Bgr, byte> actualImage = new Image<Bgr, byte>(bmp.Bitmap);
-            if (actualImage != null && detectFaces)
-            {
-                Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
-                double scaleFactor = Convert.ToDouble(ScaleFactorValue.Text);
-                int minNeigbours = Convert.ToInt32(MinNeigboursValue.Text);
-                var faces = cascadeClassifier.DetectMultiScale(grayImage, scaleFactor, minNeigbours); //the actual face detection happens here
-                foreach (var face in faces)
-                {
-                    //get just the detected area(face)
-                    var graycopy = actualImage.Copy(face).Convert<Gray, byte>().Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
-                    if (capturesTaken < capturesToBeTaken && ModeSelector.IsChecked == true)
-                    {
-                        trainingControl.AddPictureToCollection(graycopy);
-                        capturesTaken++;
-                    }
-                    //draw rectangle on detected face
-                    actualImage.Draw(face, new Bgr(255, 0, 0), 3); //the detected face(s) is highlighted here using a box that is drawn around it/them
-
-                    string personName = "UNKNOWN";
-                    if (imagesFound)
-                    {
-                        if (!isTraining)
-                        {
-                            FaceRecognizer.PredictionResult result = faceRecognizer.Predict(graycopy);
-                            personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
-                        }
-                        else
-                        {
-                            personName = "In Training";
-                        }
-                    }
-                    //display name over detected face
-                    CvInvoke.PutText(actualImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
-                }
-            }
-            imageDisplay.Image = actualImage;
-            // ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
-        }
 
         private ImageSource ConvertToImageSource(Bitmap bmp)
         {
@@ -405,6 +451,7 @@ namespace Pontor
         private void SwitchToPredictMode()
         {
             CustomControlContainer.Children.Add(predictControl);
+            isRegistering = false;
 
         }
 
@@ -412,6 +459,7 @@ namespace Pontor
         {
 
             CustomControlContainer.Children.Add(trainingControl);
+            isRegistering = true;
 
         }
 
