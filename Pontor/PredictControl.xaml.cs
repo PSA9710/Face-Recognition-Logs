@@ -33,7 +33,7 @@ namespace Pontor
         public SerialPort serialPort;
         bool isBluetoothConnected = false;
         Dictionary<String, String> bluetoothDevices = new Dictionary<string, string>();
-        Label ConsoleOutput;
+        TextBlock ConsoleOutput;
         private string bluetoothDeviceName;
         private string bluetoothDevicePort;
 
@@ -42,10 +42,10 @@ namespace Pontor
         public event EventHandler MessageRecieved;
 
 
-        public PredictControl(Label label)
+        public PredictControl(TextBlock textBlock)
         {
             InitializeComponent();
-            ConsoleOutput = label;
+            ConsoleOutput = textBlock;
 
             WriteToConsole("Bluetooth : Starting devices query");
             Thread t = new Thread(() => { PopulateComboBoxWithSerialPorts(); });
@@ -214,8 +214,8 @@ namespace Pontor
         {
             Dispatcher.Invoke(() =>
             {
-                ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
-                ConsoleOutput.Content += message + "\n";
+                ConsoleOutput.Text += DateTime.Now.ToString() + " : ";
+                ConsoleOutput.Text += message + "\n";
             });
         }
     }

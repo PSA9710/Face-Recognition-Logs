@@ -15,6 +15,8 @@ using System.Windows.Controls;
 using System.Collections.Generic;
 using Emgu.CV.Face;
 using System.Threading;
+using Emgu.CV.Cuda;
+using Emgu.CV.UI;
 
 namespace Pontor
 {
@@ -46,6 +48,7 @@ namespace Pontor
         CascadeClassifier cascadeClassifier;
         DispatcherTimer timer;
         //WebCameraControl WebCam;
+        String cudaClassifierFileName;
 
         TrainingControl trainingControl = new TrainingControl();
         PredictControl predictControl;
@@ -54,7 +57,13 @@ namespace Pontor
         bool isPersonInRange = false;
         bool detectFaces = true;
         bool isTraining = false;
+        bool isGpuEnabled = false;
+        bool isCudaEnabled = false;
 
+        double scaleFactor ;
+        int minNeigbours ;
+
+        String appLocation;
 
         public MainWindow()
         {
@@ -71,9 +80,9 @@ namespace Pontor
             timer.Tick += new EventHandler(ProcessImage);
             timer.Interval = new TimeSpan(10);
             var location = System.AppDomain.CurrentDomain.BaseDirectory;
-            cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt.xml");
-
-            // CheckIfDirectoryExists(location);
+            appLocation = location;
+            cascadeClassifier = new CascadeClassifier(location + "/haarcascade_frontalface_alt_CPU.xml");
+            cudaClassifierFileName = location + "/haarcascade_frontalface_alt.xml";
             CreateDirectory(location, "data");
             CreateDirectory(location, "pictures");
 
@@ -86,8 +95,21 @@ namespace Pontor
             LoadImages(location);
 
 
+            CheckIfCudaIsEnabled();
 
+        }
 
+        private void CheckIfCudaIsEnabled()
+        {
+            if (CudaInvoke.HasCuda)
+            {
+                isCudaEnabled = true;
+            }
+            else
+            {
+                isCudaEnabled = false;
+                hardwareSelector.IsEnabled = false;
+            }
         }
 
         private void MessageRecieved(object sender, EventArgs e)
@@ -147,7 +169,7 @@ namespace Pontor
                   if (!imagesFound)
                   {
                       MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
-                      ModeSelector.IsChecked = true;
+                      Dispatcher.Invoke(() => { ModeSelector.IsChecked = true; });
                   }
                   if (imagesFound)
                   {
@@ -164,14 +186,6 @@ namespace Pontor
             Directory.CreateDirectory(location + "/" + folder);
         }
 
-
-
-
-
-        private void LoadPictures()
-        {
-            throw new NotImplementedException();
-        }
 
         private void PopulateStreamOptions()
         {
@@ -190,10 +204,11 @@ namespace Pontor
         {
             Mat m = new Mat();
             WebCam.Retrieve(m);
+
             if (m != null)
                 this.Dispatcher.Invoke(() =>
                 {
-                    proc(m.Bitmap);
+                    proc(m);
                     // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
                 });
         }
@@ -252,18 +267,75 @@ namespace Pontor
 
                 }
             }
-            ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
+            //ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
             // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
         }
 
 
 
-        private void proc(Bitmap bmp)
+        private void proc(Mat bmp)
         {
             //Bitmap bitmap = WebCam.QueryFrame().Bitmap;
             ////bitmap = DetectFace(bitmap);
             //ImgViewer.Source = ReturnImageAsSource(bitmap);
-            Image<Bgr, byte> actualImage = new Image<Bgr, byte>(bmp);
+            if (isCudaEnabled && isGpuEnabled)
+            {
+                ProcessWithGPU(bmp);
+            }
+            else
+            {
+                ProcessWithCPU(bmp);
+            }
+            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
+        }
+
+        private void ProcessWithGPU(Mat bmp)
+        {
+            using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp.ToImage<Bgr, byte>()))
+            {
+                using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
+                {
+                    Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
+                    using (Image<Bgr, byte> capturedImage = cudaCapturedImage.ToImage())
+                    {
+                        foreach (Rectangle face in faces)
+                        {
+                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);
+                        }
+                        imageDisplay.Image = capturedImage;
+                    }
+                }
+            }
+        }
+
+        private Rectangle[] FindFacesUsingGPU(CudaImage<Gray, byte> cudaCapturedImage)
+        {
+            using (CudaCascadeClassifier face = new CudaCascadeClassifier(cudaClassifierFileName))
+            using (GpuMat faceRegionMat = new GpuMat())
+            {
+                face.ScaleFactor = scaleFactor;
+                face.MinNeighbors = minNeigbours;
+                face.DetectMultiScale(cudaCapturedImage, faceRegionMat);
+                Rectangle[] faceRegion = face.Convert(faceRegionMat);
+                return faceRegion;
+            }
+        }
+
+
+        //private void ProcessWithCPU(Mat bmp)
+        //{
+        //    using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
+        //    {
+        //        using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
+        //        {
+
+        //        }
+        //    }
+        //}
+
+        private void ProcessWithCPU(Mat bmp)
+        {
+            Image<Bgr, byte> actualImage = new Image<Bgr, byte>(bmp.Bitmap);
             if (actualImage != null && detectFaces)
             {
                 Image<Gray, byte> grayImage = actualImage.Convert<Gray, byte>();
@@ -299,8 +371,8 @@ namespace Pontor
                     CvInvoke.PutText(actualImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                 }
             }
-            ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
-            // ImgViewer.Source = ConvertToImageSource(WebCam.QueryFrame().Bitmap);
+            imageDisplay.Image = actualImage;
+            // ImgViewer.Source = ConvertToImageSource(actualImage.ToBitmap());
         }
 
         private ImageSource ConvertToImageSource(Bitmap bmp)
@@ -365,15 +437,48 @@ namespace Pontor
             {
                 predictControl.serialPort.Close();
             }
+            if (WebCam != null)
+                WebCam.Stop();
         }
 
         private void WriteToConsole(string message)
         {
             Dispatcher.Invoke(() =>
             {
-                ConsoleOutput.Content += DateTime.Now.ToString() + " : ";
-                ConsoleOutput.Content += message + "\n";
+                ConsoleOutput.Text += DateTime.Now.ToString() + " : ";
+                ConsoleOutput.Text += message + "\n";
             });
         }
+
+        private void hardwareSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (hardwareSelector.SelectedIndex == 0)
+            {
+                isGpuEnabled = false;
+            }
+            else
+            {
+                isGpuEnabled = true;
+            }
+        }
+
+        private void ParameterChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                TextBox textBox = (TextBox)sender;
+                if (textBox.Name == "ScaleFactorValue")
+                {
+                    scaleFactor = Convert.ToDouble(textBox.Text);
+                }
+                else
+                    if (textBox.Name == "MinNeigboursValue")
+                {
+                    minNeigbours = Convert.ToInt32(textBox.Text);
+                }
+            }
+            catch (Exception) { }
+        }
+
     }
 }

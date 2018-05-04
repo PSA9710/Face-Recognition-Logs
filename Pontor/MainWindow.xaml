@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:emgu="clr-namespace:Emgu.CV.UI;assembly=Emgu.CV.UI"
+
         xmlns:local="clr-namespace:Pontor"
         xmlns:wpf="clr-namespace:WebEye.Controls.Wpf;assembly=WebEye.Controls.Wpf.WebCameraControl"
         mc:Ignorable="d"
@@ -23,7 +25,10 @@
                 <RowDefinition Height="5*"/>
             </Grid.RowDefinitions>
             <!--<wpf:WebCameraControl Name="WebCam" Grid.Row="0"  />-->
-            <Image Grid.Row="0" x:Name="ImgViewer" />
+            <!-- Grid.Row="0" x:Name="ImgViewer" />-->
+            <WindowsFormsHost>
+                <emgu:ImageBox x:Name="imageDisplay"/>
+            </WindowsFormsHost>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="15*"/>
@@ -34,7 +39,7 @@
                     <RowDefinition Height="15*"/>
                 </Grid.RowDefinitions>
                 <Label Content="Video Source:" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <ComboBox Name="StreamingOptions" Grid.Row="0" Grid.Column="1" SelectedIndex="0"/>
+                <ComboBox Name="StreamingOptions" Grid.Row="0" Grid.Column="1" SelectedIndex="1"/>
                 <Grid Grid.Row="1" Grid.ColumnSpan="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
@@ -70,7 +75,7 @@
                             <TextBox Name="IP1" Grid.Column="0" MaxLength="3" Text="192"/>
                             <TextBox Name="IP2" Grid.Column="1" MaxLength="3" Text="168"/>
                             <TextBox Name="IP3" Grid.Column="2" MaxLength="3" Text="0"/>
-                            <TextBox Name="IP4" Grid.Column="3" MaxLength="3"/>
+                            <TextBox Name="IP4" Grid.Column="3" MaxLength="3" Text="120"/>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -104,17 +109,25 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Content="ScaleFactor:"/>
                         <Slider Name="ScaleFactor" Minimum="1.001" Maximum="1.4" LargeChange="0.05" SmallChange="0.05" Width="200" Value="1.2"/>
-                        <TextBox Name="ScaleFactorValue" Text="{Binding ElementName=ScaleFactor,Path=Value}" Width="40"/>
+                        <TextBox Name="ScaleFactorValue" Text="{Binding ElementName=ScaleFactor,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Content="MinimumNeighbours:"/>
                         <Slider Name="MinNeigbours" Minimum="1" SmallChange="1" Width="146" Value="4"/>
-                        <TextBox Name="MinNeigboursValue" Text="{Binding ElementName=MinNeigbours,Path=Value}" Width="40"/>
+                        <TextBox Name="MinNeigboursValue" Text="{Binding ElementName=MinNeigbours,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="Process with:"/>
+                        <ComboBox Name="hardwareSelector" SelectedIndex="0" SelectionChanged="hardwareSelector_SelectionChanged">
+                            <ComboBoxItem Content="CPU"/>
+                            <ComboBoxItem Content="GPU"/>
+                        </ComboBox>
                     </StackPanel>
                 </StackPanel>
             </Grid>
             <ToggleButton Name="ModeSelector" Content="Switch to training mode" Grid.Row="1" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" />
-            <Grid Name="CustomControlContainer" Grid.Row="2"/>
+            <Grid Name="CustomControlContainer" Grid.Row="2">
+            </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.ColumnSpan="2" Background="Black">
             <Grid.RowDefinitions>
@@ -123,8 +136,9 @@
             </Grid.RowDefinitions>
             <Label Grid.Row="0"  Content="CONSOLE OUTPUT" Foreground="#FF00FF17" Background="#FF258DA4" HorizontalContentAlignment="Left" Padding="10,0,0,0" UseLayoutRounding="True" FontSize="16" FontWeight="Bold"/>
             <ScrollViewer Name="ConsoleScrollBar" Grid.Row="1" >
-                <Label Name="ConsoleOutput" Foreground="White" FontSize="14" />
+                <TextBlock Name="ConsoleOutput" Foreground="White" FontSize="14" />
             </ScrollViewer>
         </Grid>
+
     </Grid>
 </Window>

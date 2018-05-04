@@ -5,22 +5,22 @@ VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pontor", "Pontor\Pontor.csproj", "{235F4605-96E6-41EF-B417-8FBF5BB90718}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arduino", "Arduino\Arduino.csproj", "{E2CFE4AB-6C89-4349-90BC-E69945F9D41F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|x64.ActiveCfg = Debug|x64
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Debug|x64.Build.0 = Debug|x64
 		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E2CFE4AB-6C89-4349-90BC-E69945F9D41F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E2CFE4AB-6C89-4349-90BC-E69945F9D41F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E2CFE4AB-6C89-4349-90BC-E69945F9D41F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E2CFE4AB-6C89-4349-90BC-E69945F9D41F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|x64.ActiveCfg = Release|x64
+		{235F4605-96E6-41EF-B417-8FBF5BB90718}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
