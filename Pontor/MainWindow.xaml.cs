@@ -52,7 +52,8 @@ namespace Pontor
         VideoCapture WebCam;
 
         bool isPersonInRange = false;
-        bool detectFaces = false;
+        bool detectFaces = true;
+        bool isTraining = false;
 
 
         public MainWindow()
@@ -81,15 +82,10 @@ namespace Pontor
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
 
-            Thread t = new Thread(() =>
-              {
-                  LoadImages(location);
-                  if (imagesFound)
-                  {
-                      TrainFaceRecognizer();
-                  }
-              });
-            t.Start();
+
+            LoadImages(location);
+
+
 
 
         }
@@ -109,41 +105,58 @@ namespace Pontor
 
         public void TrainFaceRecognizer()
         {
-            Thread.Sleep(500);
-            WriteToConsole("FaceRecognizer : Training...");
-            faceRecognizer.Train(trainingImages, personID);
+            Thread t = new Thread(() =>
+            {
+                Thread.Sleep(500);
+                WriteToConsole("FaceRecognizer : Training...");
+                isTraining = true;
+                //Dispatcher.Invoke
+                faceRecognizer.Train(trainingImages, personID);
+                WriteToConsole("FaceRecognizer : Finished Training");
+                isTraining = false;
+            });
+            t.Start();
             //faceRecognizer.Write("/data/ceva");
             //throw new NotImplementedException();
         }
 
         public void LoadImages(String location)
         {
-            
-            location += "/pictures";
-            int count = Directory.GetFiles(location).Length;
-            if(count>0)
-            {
-                WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images." +
-                    "\nFaceRecognizer : Loading Images...");
-            }
-            trainingImages = new Image<Gray, byte>[count];
-            personID = new int[count];
-            int i = 0;
-            foreach (string file in Directory.EnumerateFiles(location, "*.bmp"))
-            {
-                trainingImages[i] = new Image<Gray, byte>(file);
-                string filename = Path.GetFileName(file);
-                var fileSplit = filename.Split('_');
-                int personid = Convert.ToInt32(fileSplit[0]);
-                personID[i] = personid;
-                i++;
-                imagesFound = true;
-            }
-            if (!imagesFound)
-            {
-                MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
-                ModeSelector.IsChecked = true;
-            }
+            Thread t = new Thread(() =>
+              {
+                  location += "/pictures";
+                  int count = Directory.GetFiles(location).Length;
+                  if (count > 0)
+                  {
+                      WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images.");
+                      WriteToConsole("FaceRecognizer : Loading Images...");
+                  }
+                  trainingImages = new Image<Gray, byte>[count];
+                  personID = new int[count];
+                  int i = 0;
+                  foreach (string file in Directory.EnumerateFiles(location, "*.bmp"))
+                  {
+                      trainingImages[i] = new Image<Gray, byte>(file);
+                      string filename = Path.GetFileName(file);
+                      var fileSplit = filename.Split('_');
+                      int personid = Convert.ToInt32(fileSplit[0]);
+                      personID[i] = personid;
+                      i++;
+                      imagesFound = true;
+                  }
+                  if (!imagesFound)
+                  {
+                      MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
+                      ModeSelector.IsChecked = true;
+                  }
+                  if (imagesFound)
+                  {
+                      WriteToConsole("FaceRecognizer : Images Loaded succesfully");
+                      TrainFaceRecognizer();
+                  }
+              });
+            t.Start();
+
         }
 
         private void CreateDirectory(string location, string folder)
@@ -177,11 +190,12 @@ namespace Pontor
         {
             Mat m = new Mat();
             WebCam.Retrieve(m);
-            this.Dispatcher.Invoke(() =>
-            {
-                proc(m.Bitmap);
-                // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
-            });
+            if (m != null)
+                this.Dispatcher.Invoke(() =>
+                {
+                    proc(m.Bitmap);
+                    // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
+                });
         }
 
         private void Start_Click(object sender, RoutedEventArgs e)
@@ -203,12 +217,13 @@ namespace Pontor
                 url += ":8080/video";
 
                 WebCam = new VideoCapture(url);
-                MessageBox.Show("OK");
+                WriteToConsole("Camera : Connected to external camera");
             }
             else
             {
                 int id = Convert.ToInt32(StreamingOptions.SelectedItem);
                 WebCam = new VideoCapture(id);
+                WriteToConsole("Camera : Connected to internal camera");
             }
             WebCam.ImageGrabbed += WebCam_ImageGrabbed;
             WebCam.Start();
@@ -270,8 +285,15 @@ namespace Pontor
                     string personName = "UNKNOWN";
                     if (imagesFound)
                     {
-                        FaceRecognizer.PredictionResult result = faceRecognizer.Predict(graycopy);
-                        personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                        if (!isTraining)
+                        {
+                            FaceRecognizer.PredictionResult result = faceRecognizer.Predict(graycopy);
+                            personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                        }
+                        else
+                        {
+                            personName = "In Training";
+                        }
                     }
                     //display name over detected face
                     CvInvoke.PutText(actualImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
@@ -331,7 +353,7 @@ namespace Pontor
                     CustomControlContainer.Children.Remove(trainingControl);
                 SwitchToPredictMode();
                 LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
-                TrainFaceRecognizer();
+
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }
