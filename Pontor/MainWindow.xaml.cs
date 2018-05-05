@@ -91,13 +91,25 @@ namespace Pontor
             SwitchToPredictMode();
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
-
-
+            
+            //loads model otherwise trains it
+            if(!CheckForModel())
             LoadImages(location);
 
 
             CheckIfCudaIsEnabled();
 
+        }
+
+        private bool CheckForModel()
+        {
+            if(File.Exists(appLocation+ "/data/faceRecognizerModel.cv"))
+            {
+                WriteToConsole("FaceRecognizer : Model found. Loaded and skiped training");
+                faceRecognizer.Read(appLocation + "/data/faceRecognizerModel.cv");
+                return true;
+            }
+            return false;
         }
 
         private void CheckIfCudaIsEnabled()
@@ -133,7 +145,7 @@ namespace Pontor
             {
                 Thread.Sleep(500);
                 WriteToConsole("FaceRecognizer : Training...");
-                
+
                 //Dispatcher.Invoke
                 faceRecognizer.Train(trainingImages, personID);
                 WriteToConsole("FaceRecognizer : Finished Training");
@@ -206,15 +218,21 @@ namespace Pontor
 
         private void WebCam_ImageGrabbed(object sender, EventArgs e)
         {
-            Mat m = new Mat();
-            WebCam.Retrieve(m);
 
-            if (m != null)
-                this.Dispatcher.Invoke(() =>
-                {
-                    proc(m);
-                    // ImgViewer.Source = ConvertToImageSource(m.Bitmap);
-                });
+            if (isCudaEnabled && isGpuEnabled)
+            {
+                Mat gm = new Mat();
+                WebCam.Retrieve(gm);
+                ProcessWithGPU(gm);
+            }
+            else
+            {
+                Mat m = new Mat();
+                WebCam.Retrieve(m);
+                ProcessWithCPU(m);
+            }
+
+
         }
 
         private void Start_Click(object sender, RoutedEventArgs e)
@@ -227,8 +245,8 @@ namespace Pontor
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
                 string url = "http://";
-                url += UsernameStream.Text + ":";
-                url += PasswordStream.Text + "@";
+                //url += UsernameStream.Text + ":";
+                //url += PasswordStream.Text + "@";
                 url += IP1.Text + ".";
                 url += IP2.Text + ".";
                 url += IP3.Text + ".";
@@ -245,6 +263,7 @@ namespace Pontor
                 WriteToConsole("Camera : Connected to internal camera");
             }
             WebCam.ImageGrabbed += WebCam_ImageGrabbed;
+            //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
             WebCam.Start();
 
         }
@@ -254,32 +273,22 @@ namespace Pontor
             WebCam.Stop();
         }
 
-        private void proc(Mat bmp)
-        {
-            if (isCudaEnabled && isGpuEnabled)
-            {
-                ProcessWithGPU(bmp);
-            }
-            else
-            {
-                ProcessWithCPU(bmp);
-            }
-        }
+
 
         #region GPU PROCESSING
 
         private void ProcessWithGPU(Mat bmp)
         {
-            using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp.ToImage<Bgr, byte>()))
+            using (Image<Bgr, byte> capturedImage = bmp.ToImage<Bgr, byte>())
             {
-                using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
+                using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp))
                 {
-                    Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
-                    using (Image<Bgr, byte> capturedImage = cudaCapturedImage.ToImage())
+                    using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
                     {
+                        Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
                         foreach (Rectangle face in faces)
                         {
-                            using (var graycopy = capturedImage.Convert<Gray,byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                            using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
                             {
                                 capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
                                 if (isRegistering)
@@ -293,8 +302,8 @@ namespace Pontor
                                     CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                                 }
                             }
+                            imageDisplay.Image = capturedImage;
                         }
-                        imageDisplay.Image = capturedImage;
                     }
                 }
             }
@@ -356,7 +365,7 @@ namespace Pontor
 
         private void AddPicturesToCollection(Image<Gray, byte> graycopy)
         {
-            if(capturesTaken<capturesToBeTaken)
+            if (capturesTaken < capturesToBeTaken)
             {
                 capturesTaken++;
                 trainingControl.AddPictureToCollection(graycopy);
@@ -487,6 +496,8 @@ namespace Pontor
             }
             if (WebCam != null)
                 WebCam.Stop();
+            if (faceRecognizer != null)
+                faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
         }
 
         private void WriteToConsole(string message)
@@ -528,5 +539,16 @@ namespace Pontor
             catch (Exception) { }
         }
 
+        private void StreamingOptions_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (StreamingOptions.SelectedIndex == 0)
+            {
+                webcameraCredentials.IsEnabled = false;
+            }
+            else if (StreamingOptions.SelectedIndex == 1)
+            {
+                webcameraCredentials.IsEnabled = true;
+            }
+        }
     }
 }
