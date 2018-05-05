@@ -27,7 +27,7 @@
             <!--<wpf:WebCameraControl Name="WebCam" Grid.Row="0"  />-->
             <!-- Grid.Row="0" x:Name="ImgViewer" />-->
             <WindowsFormsHost>
-                <emgu:ImageBox x:Name="imageDisplay"/>
+                <emgu:ImageBox x:Name="imageDisplay" Dock="Fill"/>
             </WindowsFormsHost>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>

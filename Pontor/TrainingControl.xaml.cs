@@ -41,7 +41,8 @@ namespace Pontor
 
         public void AddPictureToCollection(Image<Gray, byte> image)
         {
-            images.Add(image);
+            Image<Gray, byte> img1 = new Image<Gray, byte>(image.ToBitmap());
+            images.Add(img1);
             ImageSource img = ConvertToImageSource(image.Bitmap);
             CapturesDisplay.Children.Add(new System.Windows.Controls.Image() { Source = img, Width = 50, Height = 50 });
         }
@@ -90,7 +91,7 @@ namespace Pontor
                 try
                 {
 
-                    foreach (object image in images)
+                    foreach (var image in images)
                     {
                         SaveImage(image, id, piccount);
                         piccount++;
@@ -158,11 +159,9 @@ namespace Pontor
             return true;
         }
 
-        private void SaveImage(object image, int id, int piccount)
+        private void SaveImage(Image<Gray,byte> image, int id, int piccount)
         {
-            Image<Gray, byte> img = image as Image<Gray, byte>;
-            //test.Source = ConvertToImageSource(img.Bitmap);
-            Bitmap bmp = img.Bitmap;
+            Bitmap bmp = image.ToBitmap();
             String filePath = "pictures/" + id.ToString();
             filePath += "_" + piccount.ToString() + ".bmp";
             bmp.Save(filePath);
