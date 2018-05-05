@@ -19,6 +19,7 @@ using Emgu.CV.Cuda;
 using Emgu.CV.UI;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Pontor
 {
@@ -297,6 +298,9 @@ namespace Pontor
             WebCam.ImageGrabbed += WebCam_ImageGrabbed;
             //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
             WebCam.Start();
+            startCameraFeed.IsEnabled = false;
+            stopCameraFeed.IsEnabled = true;
+            imageDisplayBorder.Visibility = Visibility.Visible;
         }
 
         private void Stop_Click(object sender, RoutedEventArgs e)
@@ -308,6 +312,8 @@ namespace Pontor
                 WebCam.Stop();
                 WebCam.Dispose();
             }
+            startCameraFeed.IsEnabled = true;
+            stopCameraFeed.IsEnabled = false;
         }
 
 
@@ -552,7 +558,7 @@ namespace Pontor
         {
             Dispatcher.Invoke(() =>
             {
-                ConsoleOutput.Text += DateTime.Now.ToString() + " : ";
+                ConsoleOutput.Text += DateTime.Now.ToString() + " @ ";
                 ConsoleOutput.Text += message + "\n";
                 ConsoleScrollBar.ScrollToBottom();
             });
@@ -598,7 +604,72 @@ namespace Pontor
             {
                 webcameraCredentials.IsEnabled = true;
             }
+            if(!stopCameraFeed.IsEnabled)
+            {
+                startCameraFeed.IsEnabled = true;
+            }
         }
 
+        private void Window_SourceInitialized(object sender, EventArgs e)
+        {
+            WindowAspectRatio.Register((Window)sender);
+        }
+
+        internal class WindowAspectRatio
+        {
+            private double _ratio;
+
+            private WindowAspectRatio(Window window)
+            {
+                _ratio = window.Width / window.Height;
+                ((HwndSource)HwndSource.FromVisual(window)).AddHook(DragHook);
+            }
+
+            public static void Register(Window window)
+            {
+                new WindowAspectRatio(window);
+            }
+
+            internal enum WM
+            {
+                WINDOWPOSCHANGING = 0x0046,
+            }
+
+            [Flags()]
+            public enum SWP
+            {
+                NoMove = 0x2,
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            internal struct WINDOWPOS
+            {
+                public IntPtr hwnd;
+                public IntPtr hwndInsertAfter;
+                public int x;
+                public int y;
+                public int cx;
+                public int cy;
+                public int flags;
+            }
+
+            private IntPtr DragHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+            {
+                if ((WM)msg == WM.WINDOWPOSCHANGING)
+                {
+                    WINDOWPOS position = (WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(WINDOWPOS));
+
+                    if ((position.flags & (int)SWP.NoMove) != 0 ||
+                        HwndSource.FromHwnd(hwnd).RootVisual == null) return IntPtr.Zero;
+
+                    position.cx = (int)(position.cy * _ratio);
+
+                    Marshal.StructureToPtr(position, lParam, true);
+                    handeled = true;
+                }
+
+                return IntPtr.Zero;
+            }
+        }
     }
 }
