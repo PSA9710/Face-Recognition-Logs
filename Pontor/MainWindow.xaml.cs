@@ -68,8 +68,8 @@ namespace Pontor
         String cpuClassifierFileName;
         String cudaClassifierFileName;
 
-        private CascadeClassifier faceC;
-        CudaCascadeClassifier faceG;
+        private CascadeClassifier cpuClassifier;
+        CudaCascadeClassifier cudaClassifier;
         public MainWindow()
         {
             InitializeComponent();
@@ -101,11 +101,30 @@ namespace Pontor
             CheckIfCudaIsEnabled();
 
 
-
             //test
-            faceC = new CascadeClassifier(cpuClassifierFileName);
-            faceG = new CudaCascadeClassifier(cudaClassifierFileName);
-    }
+            cpuClassifier = new CascadeClassifier(cpuClassifierFileName);
+            cudaClassifier = new CudaCascadeClassifier(cudaClassifierFileName);
+        }
+
+
+        //////private void tests(object sender,EventArgs arfs)
+        //////{
+        //////    if(WebCam!=null)
+        //////    if (isCudaEnabled && isGpuEnabled)
+        //////    {
+        //////        Mat gm = new Mat();
+        //////        gm = WebCam.QueryFrame();
+        //////            if(gm!=null)
+        //////        ProcessWithGPU(gm);
+        //////    }
+        //////    else
+        //////    {
+        //////        Mat m = new Mat();
+        //////        m = WebCam.QueryFrame();
+        //////            if(m!=null)
+        //////        ProcessWithCPU(m);
+        //////    }
+        //////}
 
         private bool CheckForModel()
         {
@@ -226,18 +245,19 @@ namespace Pontor
         {
             try
             {
-                if (isCudaEnabled && isGpuEnabled)
-                {
-                    Mat gm = new Mat();
-                    WebCam.Retrieve(gm);
-                    ProcessWithGPU(gm);
-                }
-                else
-                {
-                    Mat m = new Mat();
-                    WebCam.Retrieve(m);
-                    ProcessWithCPU(m);
-                }
+                Mat m = new Mat();
+                WebCam.Retrieve(m);
+                if (m != null)
+                    if (isCudaEnabled && isGpuEnabled)
+                    {
+
+                        ProcessWithGPU(m);
+                    }
+                    else
+                    {
+
+                        ProcessWithCPU(m);
+                    }
             }
             catch (Exception ex)
             {
@@ -257,8 +277,8 @@ namespace Pontor
             if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
             {
                 string url = "http://";
-                //url += UsernameStream.Text + ":";
-                //url += PasswordStream.Text + "@";
+                // url += UsernameStream.Text + ":";
+                // url += PasswordStream.Text + "@";
                 url += IP1.Text + ".";
                 url += IP2.Text + ".";
                 url += IP3.Text + ".";
@@ -277,7 +297,6 @@ namespace Pontor
             WebCam.ImageGrabbed += WebCam_ImageGrabbed;
             //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
             WebCam.Start();
-
         }
 
         private void Stop_Click(object sender, RoutedEventArgs e)
@@ -297,17 +316,13 @@ namespace Pontor
 
         private void ProcessWithGPU(Mat bmp)
         {
-            Stopwatch stopwatch = new Stopwatch();
-
             using (Image<Bgr, byte> capturedImage = bmp.ToImage<Bgr, byte>())
             {
                 using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp))
                 {
                     using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
                     {
-                        stopwatch.Start();
                         Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
-                        stopwatch.Stop();
                         foreach (Rectangle face in faces)
                         {
                             using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
@@ -325,16 +340,15 @@ namespace Pontor
                                 }
                             }
                             //imageDisplay.Image = capturedImage;
-                            Dispatcher.Invoke(() =>
-                            {
-                                imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap());
-                            });
+                            
                         }
                     }
                 }
+                Dispatcher.Invoke(() =>
+                {
+                    imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap());
+                });
             }
-            WriteToConsole("GPU   " + stopwatch.ElapsedMilliseconds.ToString());
-
         }
 
         private Rectangle[] FindFacesUsingGPU(CudaImage<Gray, byte> cudaCapturedImage)
@@ -342,10 +356,10 @@ namespace Pontor
             //using (CudaCascadeClassifier face = new CudaCascadeClassifier(cudaClassifierFileName))
             using (GpuMat faceRegionMat = new GpuMat())
             {
-                faceG.ScaleFactor = scaleFactor;
-                faceG.MinNeighbors = minNeigbours;
-                faceG.DetectMultiScale(cudaCapturedImage, faceRegionMat);
-                Rectangle[] faceRegion = faceG.Convert(faceRegionMat);
+                cudaClassifier.ScaleFactor = scaleFactor;
+                cudaClassifier.MinNeighbors = minNeigbours;
+                cudaClassifier.DetectMultiScale(cudaCapturedImage, faceRegionMat);
+                Rectangle[] faceRegion = cudaClassifier.Convert(faceRegionMat);
                 return faceRegion;
             }
         }
@@ -354,14 +368,11 @@ namespace Pontor
         #region CPU PROCESSING
         private void ProcessWithCPU(Mat bmp)
         {
-            Stopwatch stopwatch = new Stopwatch();
             using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
                 {
-            stopwatch.Start();
                     Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
-            stopwatch.Stop();
                     foreach (Rectangle face in faces)
                     {
                         using (var graycopy = grayCapturedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
@@ -384,15 +395,14 @@ namespace Pontor
                         { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
                 }
             }
-            WriteToConsole("CPU   " + stopwatch.ElapsedMilliseconds.ToString());
         }
 
-        
+
         private Rectangle[] FindFacesUsingCPU(Image<Gray, byte> grayCapturedImage)
         {
-           // using (CascadeClassifier face = new CascadeClassifier(cpuClassifierFileName))
+            // using (CascadeClassifier face = new CascadeClassifier(cpuClassifierFileName))
             {
-                var faces = faceC.DetectMultiScale(grayCapturedImage, scaleFactor, minNeigbours);
+                var faces = cpuClassifier.DetectMultiScale(grayCapturedImage, scaleFactor, minNeigbours);
                 return faces;
             }
         }
