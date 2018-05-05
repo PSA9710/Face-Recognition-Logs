@@ -150,7 +150,7 @@
                 <RowDefinition Height="9*"/>
             </Grid.RowDefinitions>
             <Label Grid.Row="0"  Content="CONSOLE OUTPUT" Foreground="#FF00FF17" Background="#FF258DA4" HorizontalContentAlignment="Left" Padding="10,0,0,0" UseLayoutRounding="True" FontSize="16" FontWeight="Bold"/>
-            <ScrollViewer Name="ConsoleScrollBar" Grid.Row="1" >
+            <ScrollViewer Name="ConsoleScrollBar" Grid.Row="1" CanContentScroll="True" >
                 <TextBlock Name="ConsoleOutput" Foreground="White" FontSize="14" />
             </ScrollViewer>
         </Grid>
