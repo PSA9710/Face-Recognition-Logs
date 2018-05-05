@@ -33,9 +33,10 @@
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Content="LIVE CAMERA FEED" HorizontalAlignment="Center" FontWeight="Bold" FontSize="14" />
                 <Border Grid.Row="1" BorderThickness="2" BorderBrush="Black" Margin="10,-5,10,0">
-                    <WindowsFormsHost>
+                    <!--<WindowsFormsHost>
                         <emgu:ImageBox x:Name="imageDisplay" Dock="Fill"/>
-                    </WindowsFormsHost>
+                    </WindowsFormsHost>-->
+                    <Image Name="imageDisplay"/>
                 </Border>
             </Grid>
             <Grid Grid.Row="1">

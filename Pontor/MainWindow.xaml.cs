@@ -91,10 +91,10 @@ namespace Pontor
             SwitchToPredictMode();
             pathToSavePictures = location + "/pictures";
             new SqlManager().SQL_CheckforDatabase();
-            
+
             //loads model otherwise trains it
-            if(!CheckForModel())
-            LoadImages(location);
+            if (!CheckForModel())
+                LoadImages(location);
 
 
             CheckIfCudaIsEnabled();
@@ -103,7 +103,7 @@ namespace Pontor
 
         private bool CheckForModel()
         {
-            if(File.Exists(appLocation+ "/data/faceRecognizerModel.cv"))
+            if (File.Exists(appLocation + "/data/faceRecognizerModel.cv"))
             {
                 WriteToConsole("FaceRecognizer : Model found. Loaded and skiped training");
                 faceRecognizer.Read(appLocation + "/data/faceRecognizerModel.cv");
@@ -218,18 +218,24 @@ namespace Pontor
 
         private void WebCam_ImageGrabbed(object sender, EventArgs e)
         {
-
-            if (isCudaEnabled && isGpuEnabled)
+            try
             {
-                Mat gm = new Mat();
-                WebCam.Retrieve(gm);
-                ProcessWithGPU(gm);
+                if (isCudaEnabled && isGpuEnabled)
+                {
+                    Mat gm = new Mat();
+                    WebCam.Retrieve(gm);
+                    ProcessWithGPU(gm);
+                }
+                else
+                {
+                    Mat m = new Mat();
+                    WebCam.Retrieve(m);
+                    ProcessWithCPU(m);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Mat m = new Mat();
-                WebCam.Retrieve(m);
-                ProcessWithCPU(m);
+                MessageBox.Show(ex.ToString());
             }
 
 
@@ -270,7 +276,13 @@ namespace Pontor
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            WebCam.Stop();
+            if (WebCam != null && WebCam.IsOpened)
+            {
+                WriteToConsole("Camera : Camera stopped");
+                WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
+                WebCam.Stop();
+                WebCam.Dispose();
+            }
         }
 
 
@@ -293,7 +305,7 @@ namespace Pontor
                                 capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
                                 if (isRegistering)
                                 {
-                                    AddPicturesToCollection(graycopy);
+                                    Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
                                 }
                                 else
                                 {
@@ -302,7 +314,11 @@ namespace Pontor
                                     CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                                 }
                             }
-                            imageDisplay.Image = capturedImage;
+                            //imageDisplay.Image = capturedImage;
+                            Dispatcher.Invoke(() =>
+                            {
+                                imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap());
+                            });
                         }
                     }
                 }
@@ -338,7 +354,7 @@ namespace Pontor
                             capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
                             if (isRegistering)
                             {
-                                AddPicturesToCollection(graycopy);
+                                Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
                             }
                             else
                             {
@@ -348,7 +364,9 @@ namespace Pontor
                             }
                         }
                     }
-                    imageDisplay.Image = capturedImage;
+                    //imageDisplay.Image = capturedImage;
+                    Dispatcher.Invoke(() =>
+                        { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
                 }
             }
         }
@@ -496,8 +514,11 @@ namespace Pontor
             }
             if (WebCam != null)
                 WebCam.Stop();
-            if (faceRecognizer != null)
+            if (faceRecognizer != null && !isTraining)
+            {
+                WriteToConsole("Saving Model");
                 faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
+            }
         }
 
         private void WriteToConsole(string message)
