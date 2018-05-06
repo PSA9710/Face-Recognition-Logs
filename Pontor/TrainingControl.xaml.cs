@@ -44,7 +44,24 @@ namespace Pontor
             Image<Gray, byte> img1 = new Image<Gray, byte>(image.ToBitmap());
             images.Add(img1);
             ImageSource img = ConvertToImageSource(image.Bitmap);
-            CapturesDisplay.Children.Add(new System.Windows.Controls.Image() { Source = img, Width = 50, Height = 50 });
+            previewImage.Source = img;
+            Border border = new Border() { Padding = new Thickness(10) };
+            border.Child = new System.Windows.Controls.Image() { Source = img, Width = 50, Height = 50 };
+            border.MouseLeftButtonDown += Border_MouseLeftButtonDown;
+            CapturesDisplay.Children.Add(border);
+        }
+
+        private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Border border = (Border)sender;
+            if(border.Background==null)
+            {
+                border.Background = System.Windows.Media.Brushes.CornflowerBlue;
+            }
+            else
+            {
+                border.Background = null;
+            }
         }
 
         private ImageSource ConvertToImageSource(Bitmap bmp)
