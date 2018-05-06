@@ -29,8 +29,8 @@
                 <Image Name="previewImage" Width="200" Height="200"/>
             </Border>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Name="Keep" Content="Keep" Width="60" Margin="0,0,10,0"/>
-                <Button Name="Discard" Content="Discard" Width="60" Margin="10,0,0,0"/>
+                <Button Name="Keep" Content="Keep" Width="60" Margin="0,0,10,0" IsEnabled="False" Click="Keep_Click"/>
+                <Button Name="Discard" Content="Discard" Width="60" Margin="10,0,0,0" IsEnabled="False" Click="Discard_Click"/>
             </StackPanel>
         </StackPanel>
         <Grid Grid.Row="1" Grid.Column="1">
@@ -39,17 +39,16 @@
                 <RowDefinition Height="60"/>
             </Grid.RowDefinitions>
             <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="0">
-                <WrapPanel Name="CapturesDisplay" />
+                <WrapPanel Name="CapturesDisplay"/>
             </ScrollViewer>
-            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50"  Width="150">
-                <Button Name="removePicture" Content="Remove Selected Picture" Width="150" Click="removePicture_Click"/>
-                <Label Content=" You have taken X pictures"/>
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50" >
+                <Button Name="removePicture" Content="Remove Selected Picture" Width="150" Click="removePicture_Click" IsEnabled="False"/>
+                <Label Name="capturesDisplaySizeLabel" Content=" You have taken 0 pictures"/>
             </StackPanel>
         </Grid>
         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.ColumnSpan="2">
-            <Button Name="SaveDataSet" Content="Save Pictures" Click="SaveDataSet_Click" Width="100"/>
-            <Button Name="RetakeDataSet" Content="Retake Pictures" Margin="10,0" Click="RetakeDataSet_Click" Width="100"/>
-            <Button Name="Cancel" Content="Reset" Width="100" />
+            <Button Name="SaveDataSet" Content="Save Pictures" Click="SaveDataSet_Click" Margin="0,0,10,0" Width="100" IsEnabled="False"/>
+            <Button Name="Cancel" Content="Reset" Width="100" Click="Cancel_Click" />
         </StackPanel>
         <!--<Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>

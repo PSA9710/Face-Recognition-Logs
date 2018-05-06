@@ -37,7 +37,7 @@ namespace Pontor
 
 
         public static int capturesTaken = 0;
-        public static int capturesToBeTaken = 100;
+        public static int capturesToBeTaken = 20;
         public static String pathToSavePictures;
 
         bool imagesFound = false;
@@ -346,7 +346,7 @@ namespace Pontor
                                 }
                             }
                             //imageDisplay.Image = capturedImage;
-                            
+
                         }
                     }
                 }
@@ -416,11 +416,11 @@ namespace Pontor
 
         private void AddPicturesToCollection(Image<Gray, byte> graycopy)
         {
-            if (capturesTaken < capturesToBeTaken)
-            {
-                capturesTaken++;
-                trainingControl.AddPictureToCollection(graycopy);
-            }
+            if (trainingControl.isWaitingForImage)
+                if (capturesTaken < capturesToBeTaken)
+                {
+                    trainingControl.AddPictureToCollection(graycopy);
+                }
         }
 
         private String PredictFace(Image<Gray, byte> image)
@@ -604,7 +604,7 @@ namespace Pontor
             {
                 webcameraCredentials.IsEnabled = true;
             }
-            if(!stopCameraFeed.IsEnabled)
+            if (!stopCameraFeed.IsEnabled)
             {
                 startCameraFeed.IsEnabled = true;
             }

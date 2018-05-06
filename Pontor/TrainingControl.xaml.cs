@@ -29,9 +29,9 @@ namespace Pontor
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
 
-        List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
+        List<Image<Gray, byte>> imagesToBeSaved = new List<Image<Gray, byte>>();
         List<Border> imagesToBeDeleted = new List<Border>();
-        
+        public bool isWaitingForImage = true;
 
         public TrainingControl()
         {
@@ -42,19 +42,18 @@ namespace Pontor
         public void AddPictureToCollection(Image<Gray, byte> image)
         {
             Image<Gray, byte> img1 = new Image<Gray, byte>(image.ToBitmap());
-            images.Add(img1);
+            imagesToBeSaved.Add(img1);
             ImageSource img = ConvertToImageSource(image.Bitmap);
             previewImage.Source = img;
-            Border border = new Border() { Padding = new Thickness(10) };
-            border.Child = new System.Windows.Controls.Image() { Source = img, Width = 50, Height = 50 };
-            border.MouseLeftButtonDown += Border_MouseLeftButtonDown;
-            CapturesDisplay.Children.Add(border);
+            Keep.IsEnabled = true;
+            Discard.IsEnabled = true;
+            isWaitingForImage = false;
         }
 
         private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             Border border = (Border)sender;
-            if (border.Background==null)
+            if (border.Background == null)
             {
                 border.Background = System.Windows.Media.Brushes.CornflowerBlue;
                 imagesToBeDeleted.Add(border);
@@ -63,6 +62,14 @@ namespace Pontor
             {
                 border.Background = null;
                 imagesToBeDeleted.Remove(border);
+            }
+            if(imagesToBeDeleted.Count==0)
+            {
+                removePicture.IsEnabled = false;
+            }
+            else
+            {
+                removePicture.IsEnabled = true;
             }
         }
 
@@ -77,23 +84,16 @@ namespace Pontor
 
         }
 
-        private void RetakeDataSet_Click(object sender, RoutedEventArgs e)
-        {
-            MainWindow.capturesTaken = 0;
-            CapturesDisplay.Children.Clear();
-            images.Clear();
-        }
-
         private void SaveDataSet_Click(object sender, RoutedEventArgs e)
         {
             String firstName = FirstNameTextBox.Text;
             String lastName = LastNameTextBox.Text;
             String CNP = CNPTextBox.Text;
-            if (images.Count != MainWindow.capturesToBeTaken)
+            if (imagesToBeSaved.Count != MainWindow.capturesToBeTaken)
             {
                 MessageBox.Show("Witchcraft!!! There should be " + MainWindow.capturesToBeTaken.ToString() + "" +
-                    " pictures taken","WIZZARD DETECTED",MessageBoxButton.OK,MessageBoxImage.Warning);
-                MessageBox.Show(images.Count.ToString());
+                    " pictures taken", "WIZZARD DETECTED", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(imagesToBeSaved.Count.ToString());
                 return;
             }
             if (SaveInDatabase(firstName, lastName, CNP))
@@ -110,15 +110,15 @@ namespace Pontor
                 try
                 {
 
-                    foreach (var image in images)
+                    foreach (var image in imagesToBeSaved)
                     {
                         SaveImage(image, id, piccount);
                         piccount++;
 
                     }
                     ResetAllFields();
-                    images.Clear();
-                    
+                    imagesToBeSaved.Clear();
+
                     MessageBox.Show("Save succesful");
 
                 }
@@ -146,7 +146,7 @@ namespace Pontor
                     new SqlManager().SQL_InsertIntoPersons(firstName, lastName, CNP);
                     return true;
                 }
-                catch(IndexOutOfRangeException e)
+                catch (IndexOutOfRangeException e)
                 {
                     MessageBox.Show("There is 1 Person with same CNP. Please check your information or contact database administrator",
                      "CNP IN USE", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -178,7 +178,7 @@ namespace Pontor
             return true;
         }
 
-        private void SaveImage(Image<Gray,byte> image, int id, int piccount)
+        private void SaveImage(Image<Gray, byte> image, int id, int piccount)
         {
             Bitmap bmp = image.ToBitmap();
             String filePath = "pictures/" + id.ToString();
@@ -189,13 +189,72 @@ namespace Pontor
 
         private void removePicture_Click(object sender, RoutedEventArgs e)
         {
-            if(imagesToBeDeleted.Count!=0)
+            if (imagesToBeDeleted.Count != 0)
             {
-                foreach(var image in imagesToBeDeleted)
+                foreach (var image in imagesToBeDeleted)
                 {
+                    int index=CapturesDisplay.Children.IndexOf(image);
+                    imagesToBeSaved.RemoveAt(index);
                     CapturesDisplay.Children.Remove(image);
                 }
+                imagesToBeDeleted.Clear();
+                MainWindow.capturesTaken = CapturesDisplay.Children.Count;
+                CapturesDisplay_ContentChanged();
+                removePicture.IsEnabled = false;
             }
+        }
+
+        private void Keep_Click(object sender, RoutedEventArgs e)
+        {
+            Border border = new Border() { Padding = new Thickness(5) };
+            border.Child = new System.Windows.Controls.Image() { Source = previewImage.Source, Width = 95, Height = 95 };
+            border.MouseLeftButtonDown += Border_MouseLeftButtonDown;
+            CapturesDisplay.Children.Add(border);
+            previewImage.Source = null;
+            CapturesDisplay_ContentChanged();
+            Keep.IsEnabled = false;
+            isWaitingForImage = true;
+            Discard.IsEnabled = false;
+        }
+
+        private void Discard_Click(object sender, RoutedEventArgs e)
+        {
+            previewImage.Source = null;
+            Keep.IsEnabled = false;
+            Discard.IsEnabled = false;
+            isWaitingForImage = true;
+        }
+
+        private void CapturesDisplay_ContentChanged()
+        {
+            int count = CapturesDisplay.Children.Count;
+            MainWindow.capturesTaken = count;
+            capturesDisplaySizeLabel.Content = "You have taken " + count.ToString() + " pictures!";
+            if (count == MainWindow.capturesToBeTaken)
+            {
+                capturesDisplaySizeLabel.Content += " You may save now";
+                SaveDataSet.IsEnabled=true;
+            }
+            else
+            {
+                SaveDataSet.IsEnabled = false;
+            }
+        }
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            CapturesDisplay.Children.Clear();
+            imagesToBeDeleted.Clear();
+            CapturesDisplay_ContentChanged();
+            previewImage.Source = null;
+            Keep.IsEnabled = false;
+            Discard.IsEnabled = false;
+            removePicture.IsEnabled = false;
+            FirstNameTextBox.Text = "";
+            LastNameTextBox.Text = "";
+            CNPTextBox.Text = "";
+            imagesToBeSaved.Clear();
+            
         }
     }
 }
