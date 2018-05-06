@@ -42,7 +42,7 @@
                 <WrapPanel Name="CapturesDisplay" />
             </ScrollViewer>
             <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50"  Width="150">
-                <Button Name="removePicture" Content="Remove Selected Picture" Width="150"/>
+                <Button Name="removePicture" Content="Remove Selected Picture" Width="150" Click="removePicture_Click"/>
                 <Label Content=" You have taken X pictures"/>
             </StackPanel>
         </Grid>

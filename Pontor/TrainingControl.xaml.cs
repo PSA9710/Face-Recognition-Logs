@@ -30,7 +30,7 @@ namespace Pontor
         public static extern bool DeleteObject(IntPtr hObject);
 
         List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
-        List<System.Windows.Controls.Image> imagesToBeDeleted = new List<System.Windows.Controls.Image>();
+        List<Border> imagesToBeDeleted = new List<Border>();
         
 
         public TrainingControl()
@@ -54,16 +54,15 @@ namespace Pontor
         private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             Border border = (Border)sender;
-            System.Windows.Controls.Image image = (System.Windows.Controls.Image)border.Child;
             if (border.Background==null)
             {
                 border.Background = System.Windows.Media.Brushes.CornflowerBlue;
-                imagesToBeDeleted.Add(image);
+                imagesToBeDeleted.Add(border);
             }
             else
             {
                 border.Background = null;
-                imagesToBeDeleted.Remove(image);
+                imagesToBeDeleted.Remove(border);
             }
         }
 
@@ -188,7 +187,15 @@ namespace Pontor
             bmp.Dispose();
         }
 
-
-
+        private void removePicture_Click(object sender, RoutedEventArgs e)
+        {
+            if(imagesToBeDeleted.Count!=0)
+            {
+                foreach(var image in imagesToBeDeleted)
+                {
+                    CapturesDisplay.Children.Remove(image);
+                }
+            }
+        }
     }
 }
