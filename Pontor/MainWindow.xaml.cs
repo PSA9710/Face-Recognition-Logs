@@ -285,29 +285,33 @@ namespace Pontor
                 MessageBox.Show("Please select streaming Device");
                 return;
             }
-            if (StreamingOptions.SelectedItem.ToString() == "VIA IP")
-            {
-                string url = "http://";
-                // url += UsernameStream.Text + ":";
-                // url += PasswordStream.Text + "@";
-                url += IP1.Text + ".";
-                url += IP2.Text + ".";
-                url += IP3.Text + ".";
-                url += IP4.Text;
-                url += ":8080/video";
-
-                WebCam = new VideoCapture(url);
-                WriteToConsole("Camera : Connected to external camera");
-            }
-            else
-            {
-                int id = Convert.ToInt32(StreamingOptions.SelectedItem);
-                WebCam = new VideoCapture(id);
-                WriteToConsole("Camera : Connected to internal camera");
-            }
-            WebCam.ImageGrabbed += WebCam_ImageGrabbed;
-            //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
-            WebCam.Start();
+            string option = StreamingOptions.SelectedItem.ToString();
+            string url = "http://";
+            // url += UsernameStream.Text + ":";
+            // url += PasswordStream.Text + "@";
+            url += IP1.Text + ".";
+            url += IP2.Text + ".";
+            url += IP3.Text + ".";
+            url += IP4.Text;
+            url += ":8080/video";
+            Thread t = new Thread(() =>
+              {
+                  if (option == "VIA IP")
+                  {
+                      WebCam = new VideoCapture(url);
+                      WriteToConsole("Camera : Connected to external camera");
+                  }
+                  else
+                  {
+                      int id = Convert.ToInt32(StreamingOptions.SelectedItem);
+                      WebCam = new VideoCapture(id);
+                      WriteToConsole("Camera : Connected to internal camera");
+                  }
+                  WebCam.ImageGrabbed += WebCam_ImageGrabbed;
+                  //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
+                  WebCam.Start();
+              });
+            t.Start();
             startCameraFeed.IsEnabled = false;
             stopCameraFeed.IsEnabled = true;
             imageDisplayBorder.Visibility = Visibility.Visible;
@@ -315,7 +319,7 @@ namespace Pontor
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            if (WebCam != null && WebCam.IsOpened)
+            if (WebCam != null)
             {
                 WriteToConsole("Camera : Camera stopped");
                 WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
@@ -542,7 +546,7 @@ namespace Pontor
                 if (trainingControl != null)
                     CustomControlContainer.Children.Remove(trainingControl);
                 SwitchToPredictMode();
-                if(trainingControl.hasSaved)
+                if (trainingControl.hasSaved)
                 {
                     LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
                 }
@@ -553,16 +557,16 @@ namespace Pontor
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if(isTraining)
+            if (isTraining)
             {
                 MessageBoxResult result = MessageBox.Show("Face recognition in training. Do you want to quit?", "Possible data loss", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if(result==MessageBoxResult.No)
+                if (result == MessageBoxResult.No)
                 {
                     e.Cancel = true;
                     return;
                 }
             }
-            if(capturesTaken>0)
+            if (capturesTaken > 0)
             {
                 MessageBoxResult result = MessageBox.Show("You have unsaved pictures. Do you want to quit?", "Possible data loss", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (result == MessageBoxResult.No)
@@ -576,7 +580,10 @@ namespace Pontor
                 predictControl.serialPort.Close();
             }
             if (WebCam != null)
+            {
                 WebCam.Stop();
+                WebCam.Dispose();
+            }
             if (faceRecognizer != null && !isTraining)
             {
                 WriteToConsole("Saving Model");
@@ -702,6 +709,6 @@ namespace Pontor
                 return IntPtr.Zero;
             }
         }
-        
+
     }
 }
