@@ -69,42 +69,51 @@
         </Grid>
         <Grid Name="RightSide" Grid.Column="1" Grid.Row="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="173*"/>
-                <RowDefinition Height="44*"/>
-                <RowDefinition Height="300*"/>
+                <RowDefinition Height="120"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid Name="ParameterTunning" Grid.Row="0">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Label Content="Parameter Tuning" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold" Margin="0,0,0,-5"/>
-                    <Border HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="Black" BorderThickness="2" Padding="3" Background="#FFACACAC">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#FF1F1F1F" ShadowDepth="3" BlurRadius="10" Direction="45" />
-                        </Border.Effect>
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Label Content="ScaleFactor:"/>
-                                <Slider Name="ScaleFactor" Minimum="1.001" Maximum="1.4" LargeChange="0.05" SmallChange="0.05" Width="200" Value="1.2"/>
-                                <TextBox Name="ScaleFactorValue" Text="{Binding ElementName=ScaleFactor,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Label Content="MinimumNeighbours:"/>
-                                <Slider Name="MinNeigbours" Minimum="1" SmallChange="1" Width="146" Value="4"/>
-                                <TextBox Name="MinNeigboursValue" Text="{Binding ElementName=MinNeigbours,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Label Content="Process with:"/>
-                                <ComboBox Name="hardwareSelector" SelectedIndex="0" SelectionChanged="hardwareSelector_SelectionChanged">
-                                    <ComboBoxItem Content="CPU"/>
-                                    <ComboBoxItem Content="GPU"/>
-                                </ComboBox>
-                            </StackPanel>
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Height="117"  Width="322">
+                <Label Content="Parameter Tuning" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold" Margin="0"/>
+                <Border HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="Black" BorderThickness="2" Padding="3" Background="#FFACACAC">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF1F1F1F" ShadowDepth="3" BlurRadius="10" Direction="45" />
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label Content="ScaleFactor:"/>
+                            <Slider Name="ScaleFactor" Minimum="1.001" Maximum="1.4" LargeChange="0.05" SmallChange="0.05" Width="200" Value="1.2"/>
+                            <TextBox Name="ScaleFactorValue" Text="{Binding ElementName=ScaleFactor,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label Content="MinimumNeighbours:"/>
+                            <Slider Name="MinNeigbours" Minimum="1" SmallChange="1" Width="146" Value="4"/>
+                            <TextBox Name="MinNeigboursValue" Text="{Binding ElementName=MinNeigbours,Path=Value}" Width="40" TextChanged="ParameterChanged"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label Content="Process with:"/>
+                            <ComboBox Name="hardwareSelector" SelectedIndex="0" SelectionChanged="hardwareSelector_SelectionChanged">
+                                <ComboBoxItem Content="CPU"/>
+                                <ComboBoxItem Content="GPU"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            <Border Grid.Row="1" BorderThickness="2" BorderBrush="Black" Margin="10,10,20,10" Background="#FFACACAC" >
+                <Border.Effect>
+                    <DropShadowEffect Direction="0" Color="#FF1F1F1F" ShadowDepth="3" BlurRadius="10" />
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <ToggleButton Name="ModeSelector" Content="Switch to training mode" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" Width="140" VerticalAlignment="Bottom" Height="30"/>
+                    <Border Grid.Row="1" BorderThickness="1" BorderBrush="Black" Margin="10" Background="#FFACACAC">
+                        <Grid Name="CustomControlContainer" Grid.Row="1"/>
                     </Border>
-                </StackPanel>
-            </Grid>
-            <ToggleButton Name="ModeSelector" Content="Switch to training mode" Grid.Row="1" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" Margin="252,0" Width="132" />
-            <Grid Name="CustomControlContainer" Grid.Row="2">
-            </Grid>
+                </Grid>
+            </Border>
         </Grid>
         <Grid Grid.Row="1" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
