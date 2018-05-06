@@ -553,6 +553,24 @@ namespace Pontor
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if(isTraining)
+            {
+                MessageBoxResult result = MessageBox.Show("Face recognition in training. Do you want to quit?", "Possible data loss", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if(result==MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            if(capturesTaken>0)
+            {
+                MessageBoxResult result = MessageBox.Show("You have unsaved pictures. Do you want to quit?", "Possible data loss", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
             if (predictControl.serialPort != null && predictControl.serialPort.IsOpen)
             {
                 predictControl.serialPort.Close();
@@ -564,6 +582,7 @@ namespace Pontor
                 WriteToConsole("Saving Model");
                 faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
             }
+            Environment.Exit(0);
         }
 
         private void WriteToConsole(string message)
