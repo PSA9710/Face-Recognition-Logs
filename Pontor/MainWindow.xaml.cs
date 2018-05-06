@@ -109,8 +109,8 @@ namespace Pontor
 
         private void trainingControlWriteToConsole(object sender, EventArgs e)
         {
-            String message=trainingControl.messageForConsole;
-            if(message!=null)
+            String message = trainingControl.messageForConsole;
+            if (message != null)
             {
                 WriteToConsole(message);
                 trainingControl.messageForConsole = null;
@@ -542,8 +542,10 @@ namespace Pontor
                 if (trainingControl != null)
                     CustomControlContainer.Children.Remove(trainingControl);
                 SwitchToPredictMode();
-                LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
-
+                if(trainingControl.hasSaved)
+                {
+                    LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
+                }
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }
@@ -681,5 +683,6 @@ namespace Pontor
                 return IntPtr.Zero;
             }
         }
+        
     }
 }

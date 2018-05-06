@@ -108,7 +108,7 @@
                         <RowDefinition Height="40"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <ToggleButton Name="ModeSelector" Content="Switch to training mode" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" Width="140" VerticalAlignment="Bottom" Height="30"/>
+                    <ToggleButton Name="ModeSelector" Content="Switch to training mode" HorizontalAlignment="Center" Unchecked="ModelSelector_Unchecked" Checked="ModeSelector_Checked" Width="140" VerticalAlignment="Bottom" Height="30" />
                     <Border Grid.Row="1" BorderThickness="1" BorderBrush="Black" Margin="10" Background="#FFACACAC">
                         <Grid Name="CustomControlContainer" Grid.Row="1"/>
                     </Border>
