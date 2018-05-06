@@ -29,9 +29,14 @@ namespace Pontor
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
 
+        public event EventHandler writeToConsole;
+
         List<Image<Gray, byte>> imagesToBeSaved = new List<Image<Gray, byte>>();
         List<Border> imagesToBeDeleted = new List<Border>();
         public bool isWaitingForImage = true;
+        public String messageForConsole;
+        public bool hasSaved = false;
+
 
         public TrainingControl()
         {
@@ -96,6 +101,7 @@ namespace Pontor
                 MessageBox.Show(imagesToBeSaved.Count.ToString());
                 return;
             }
+            WriteToConsole("Training Mode : Saving " + imagesToBeSaved.Count + " images in folder pictures");
             if (SaveInDatabase(firstName, lastName, CNP))
             {
 
@@ -105,36 +111,49 @@ namespace Pontor
                     MessageBox.Show("IMPOSIBLE! The ID is negative! Bring holy water!");
                     return;
                 }
-                int piccount = 0;
-                var location = MainWindow.pathToSavePictures + "/";
-                try
-                {
-
-                    foreach (var image in imagesToBeSaved)
-                    {
-                        SaveImage(image, id, piccount);
-                        piccount++;
-
-                    }
-                    ResetAllFields();
-                    imagesToBeSaved.Clear();
-
-                    MessageBox.Show("Save succesful");
-
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.ToString());
-                }
+                SaveToFile(firstName, lastName, id);
             }
         }
 
-        private void ResetAllFields()
+        private void SaveToFile(string firstName, string lastName, int id)
         {
+            int piccount = 0;
+            var location = MainWindow.pathToSavePictures + "/";
+            try
+            {
+
+                foreach (var image in imagesToBeSaved)
+                {
+                    SaveImage(image, id, piccount);
+                    piccount++;
+
+                }
+                ResetEverything();
+                imagesToBeSaved.Clear();
+
+                WriteToConsole("Training Mode : Save succesful for " + firstName + " " + lastName);
+                hasSaved = true;
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.ToString());
+            }
+        }
+
+        private void ResetEverything()
+        {
+
+            CapturesDisplay.Children.Clear();
+            imagesToBeDeleted.Clear();
+            CapturesDisplay_ContentChanged();
+            previewImage.Source = null;
+            Keep.IsEnabled = false;
+            Discard.IsEnabled = false;
+            removePicture.IsEnabled = false;
             FirstNameTextBox.Text = "";
             LastNameTextBox.Text = "";
             CNPTextBox.Text = "";
-            CapturesDisplay.Children.Clear();
+            imagesToBeSaved.Clear();
         }
 
         private bool SaveInDatabase(string firstName, string lastName, string CNP)
@@ -243,18 +262,14 @@ namespace Pontor
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            CapturesDisplay.Children.Clear();
-            imagesToBeDeleted.Clear();
-            CapturesDisplay_ContentChanged();
-            previewImage.Source = null;
-            Keep.IsEnabled = false;
-            Discard.IsEnabled = false;
-            removePicture.IsEnabled = false;
-            FirstNameTextBox.Text = "";
-            LastNameTextBox.Text = "";
-            CNPTextBox.Text = "";
-            imagesToBeSaved.Clear();
-            
+            ResetEverything();
+        }
+
+        private void WriteToConsole(String msg)
+        {
+            messageForConsole = msg;
+            if (writeToConsole != null)
+                writeToConsole(this, EventArgs.Empty);
         }
     }
 }

@@ -79,7 +79,7 @@ namespace Pontor
 
             predictControl = new PredictControl(ConsoleOutput);
             predictControl.MessageRecieved += new EventHandler(MessageRecieved);
-
+            trainingControl.writeToConsole += new EventHandler(trainingControlWriteToConsole);
 
 
             var location = System.AppDomain.CurrentDomain.BaseDirectory;
@@ -105,6 +105,16 @@ namespace Pontor
             //test
             cpuClassifier = new CascadeClassifier(cpuClassifierFileName);
             cudaClassifier = new CudaCascadeClassifier(cudaClassifierFileName);
+        }
+
+        private void trainingControlWriteToConsole(object sender, EventArgs e)
+        {
+            String message=trainingControl.messageForConsole;
+            if(message!=null)
+            {
+                WriteToConsole(message);
+                trainingControl.messageForConsole = null;
+            }
         }
 
 
