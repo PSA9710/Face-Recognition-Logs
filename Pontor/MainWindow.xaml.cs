@@ -85,7 +85,7 @@ namespace Pontor
             var location = System.AppDomain.CurrentDomain.BaseDirectory;
             appLocation = location;
             cpuClassifierFileName = location + "/haarcascade_frontalface_alt_CPU.xml";
-            cudaClassifierFileName = location + "/haarcascade_frontalface_alt.xml";
+            cudaClassifierFileName = location + "/haarcascade_frontalface_alt_GPU.xml";
             CreateDirectory(location, "data");
             CreateDirectory(location, "pictures");
 
