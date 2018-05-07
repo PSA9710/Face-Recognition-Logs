@@ -42,6 +42,9 @@ namespace Pontor
         public event EventHandler MessageRecieved;
 
 
+        
+
+
         public PredictControl(TextBlock textBlock)
         {
             InitializeComponent();
@@ -80,7 +83,7 @@ namespace Pontor
             {
                 bluetoothDeviceName = BluetoothDevicesList.SelectedValue.ToString();
                 bluetoothDevicePort = bluetoothDevices[BluetoothDevicesList.SelectedValue.ToString()];
-                WriteToConsole("Selected " + bluetoothDeviceName + " " + bluetoothDevicePort);
+                WriteToConsole("Bluetooth : Selected " + bluetoothDeviceName + " " + bluetoothDevicePort);
                 Thread t = new Thread(() => ConnectToComPort(bluetoothDevicePort));
                 t.Start();
             }
@@ -91,16 +94,19 @@ namespace Pontor
         {
             Thread.Sleep(1000);
             if (serialPort != null && serialPort.IsOpen)
-                serialPort.Close();
+            {
+                DisconnectFromBluetooth();
+                //serialPort.Close();
+            }
             try
             {
                 serialPort = new SerialPort(bluetoothDevice, 9600);
                 serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
                 serialPort.NewLine = "\r\n";
-                WriteToConsole("Atempting to connect to "+bluetoothDeviceName+"...");
+                WriteToConsole("Bluetooth : Atempting to connect to " + bluetoothDeviceName + "...");
                 serialPort.Open();
                 serialPort.Write("WHO AM I");
-                WriteToConsole("Connection opened to "+bluetoothDeviceName);
+                WriteToConsole("Bluetooth : Connection opened to " + bluetoothDeviceName);
                 isBluetoothConnected = false;
             }
             catch (Exception e)
@@ -129,30 +135,67 @@ namespace Pontor
 
         private void ProcessMessage()
         {
-            if(message.Length==1)
+            if (message.Length == 1)
             {
                 LEDMessage();
+            }
+            if (message.Contains("Distance:"))
+            {
+                DistanceMessage(message);
+            }
+        }
+
+        private void DistanceMessage(string message)
+        {
+            message = message.Remove(0, 9);
+            WriteToConsole(message);
+            int distance = Convert.ToInt32(message);
+            if (distance < 250)
+            {
+                float offset = distance / 250;
+                byte alpha = 255;
+                byte red = 0, blue = 0, green = 0;
+                if (distance > 180)
+                {
+                    red = 255;
+                    green = 255;
+                }
+                else if (distance > 40)
+                {
+                    green = 255;
+                }
+                else
+                {
+                    red = 255;
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    gradientMiddle.Color = Color.FromArgb(alpha, red, green, blue);
+                    gradientMiddle.Offset = offset;
+                });
             }
         }
 
         private void LEDMessage()
         {
-            Dispatcher.Invoke(() => { 
-            if (message == "R")
+            Dispatcher.Invoke(() =>
             {
-                LED.Fill = new SolidColorBrush(Colors.Red);
-            }
-            else if (message == "Y")
-            {
-                LED.Fill = new SolidColorBrush(Colors.Yellow);
-            }
-            else if (message == "G")
-            {
-                LED.Fill = new SolidColorBrush(Colors.Lime);
-            }
+                if (message == "R")
+                {
+                    LED.Fill = new SolidColorBrush(Colors.Red);
+                }
+                else if (message == "Y")
+                {
+                    LED.Fill = new SolidColorBrush(Colors.Yellow);
+                }
+                else if (message == "G")
+                {
+                    LED.Fill = new SolidColorBrush(Colors.Lime);
+                }
                 if (MessageRecieved != null)
                     MessageRecieved(this, EventArgs.Empty);
-        });
+            });
 
         }
 
@@ -161,19 +204,25 @@ namespace Pontor
             //if (message.Contains("ROOT"))
             if (message == "YOU ARE ROOT")
             {
-                WriteToConsole("Succesfully connected to "+bluetoothDeviceName);
+                WriteToConsole("Succesfully connected to " + bluetoothDeviceName);
                 isBluetoothConnected = true;
             }
             else
             {
-                RemoveComPort();
-                isBluetoothConnected = false;
+                DisconnectFromBluetooth();
             }
+        }
+
+        public void DisconnectFromBluetooth()
+        {
+            serialPort.Write("BYEbye");
+            isBluetoothConnected = false;
+            RemoveComPort();
         }
 
         private void RemoveComPort()
         {
-            var s = "Connected to the wrong device...Closing connection to "+ bluetoothDeviceName;
+            var s = "Connected to the wrong device...Closing connection to " + bluetoothDeviceName;
             WriteToConsole(s);
             if (serialPort.IsOpen)
                 serialPort.Close();

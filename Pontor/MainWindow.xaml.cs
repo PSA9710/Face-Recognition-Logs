@@ -104,7 +104,6 @@ namespace Pontor
 
             //test
             cpuClassifier = new CascadeClassifier(cpuClassifierFileName);
-            cudaClassifier = new CudaCascadeClassifier(cudaClassifierFileName);
         }
 
         private void trainingControlWriteToConsole(object sender, EventArgs e)
@@ -153,9 +152,12 @@ namespace Pontor
             if (CudaInvoke.HasCuda)
             {
                 isCudaEnabled = true;
+                cudaClassifier = new CudaCascadeClassifier(cudaClassifierFileName);
+
             }
             else
             {
+                
                 isCudaEnabled = false;
                 hardwareSelector.IsEnabled = false;
             }
@@ -303,8 +305,8 @@ namespace Pontor
                   }
                   else
                   {
-                      int id = Convert.ToInt32(StreamingOptions.SelectedItem);
-                      WebCam = new VideoCapture(id);
+                     // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
+                      WebCam = new VideoCapture(Convert.ToInt32(option));
                       WriteToConsole("Camera : Connected to internal camera");
                   }
                   WebCam.ImageGrabbed += WebCam_ImageGrabbed;
@@ -577,7 +579,7 @@ namespace Pontor
             }
             if (predictControl.serialPort != null && predictControl.serialPort.IsOpen)
             {
-                predictControl.serialPort.Close();
+                predictControl.DisconnectFromBluetooth();
             }
             if (WebCam != null)
             {

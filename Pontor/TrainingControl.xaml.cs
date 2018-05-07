@@ -242,6 +242,7 @@ namespace Pontor
             Keep.IsEnabled = false;
             Discard.IsEnabled = false;
             isWaitingForImage = true;
+            imagesToBeSaved.RemoveAt(imagesToBeSaved.Count - 1);
         }
 
         private void CapturesDisplay_ContentChanged()

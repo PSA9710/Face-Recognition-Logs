@@ -6,16 +6,15 @@
              xmlns:local="clr-namespace:Pontor"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
+    <Grid Background="#FFACACAC">
         <Grid.RowDefinitions>
             <RowDefinition Height="16*"/>
             <RowDefinition Height="22*"/>
             <RowDefinition Height="187*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" >
-            <CheckBox Content="Use with Arduino" VerticalContentAlignment="Center" Margin="0,0,30,0"/>
             <Label Content="Select Bluetooth device:" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
-            <ComboBox Name="BluetoothDevicesList" Width="100" SelectionChanged="BluetoothDevicesList_SelectionChanged" IsEnabled="False" VerticalContentAlignment="Center" />
+            <ComboBox Name="BluetoothDevicesList" Width="100" SelectionChanged="BluetoothDevicesList_SelectionChanged" VerticalContentAlignment="Center" />
         </StackPanel>
         <Grid Name="State" Grid.Row="1">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -25,7 +24,15 @@
             </StackPanel>
         </Grid>
         <Grid Grid.Row="2">
-            
+            <Polygon Points="0,0 80,0 40,100" Stretch="Uniform" Stroke="Black" StrokeThickness="3">
+                <Polygon.Fill>
+                    <LinearGradientBrush EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
+                        <GradientStop x:Name="gradientTop" Color="#FFACACAC"/>
+                        <GradientStop x:Name="gradientMiddle" Color="Lime" Offset="0.62"/>
+                        <GradientStop x:Name="gradientBottom" Color="#FFACACAC" Offset="1"/>
+                    </LinearGradientBrush>
+                </Polygon.Fill>
+            </Polygon>
         </Grid>
     </Grid>
 </UserControl>
