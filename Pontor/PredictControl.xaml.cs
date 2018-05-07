@@ -52,6 +52,7 @@ namespace Pontor
             Thread t = new Thread(() => { PopulateComboBoxWithSerialPorts(); });
             t.Start();
 
+
         }
 
         private void PopulateComboBoxWithSerialPorts()
@@ -157,26 +158,56 @@ namespace Pontor
 
         private void ChangeLinearGradientBrushTriangle(int distance)
         {
-            Color gradientMiddle = GetColorBasedOnDistance(distance);
-            Color gradientBackground = Color.FromArgb(255, 172, 172, 172);
-            LinearGradientBrush linearGradientBrush = new LinearGradientBrush
+            // Dispatcher.Invoke(() => { RadarTriangle.Fill = linearGradientBrush; });
+            Dispatcher.Invoke(() =>
             {
-                StartPoint = new Point(0.5, 0),
-                EndPoint = new Point(0.5, 1)
-            };
-            double offset = distance / 250;
-            double offsetTop = offset - 0.15;
-            double offsetBottom = offset + 0.15;
-            offsetTop = Clamp(offsetTop, 0, 1);
-            offsetBottom = Clamp(offsetBottom, 0, 1);
-            linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetTop));
-            linearGradientBrush.GradientStops.Add(new GradientStop(gradientMiddle, offset));
-            linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetBottom));
-
-            Dispatcher.Invoke(() => { RadarTriangle.Fill = linearGradientBrush; });
+                ////Polygon radarTriangle = new Polygon
+                ////{
+                ////    Points = GetTrianglePoints(),
+                ////    Stroke=Brushes.Black,
+                ////    StrokeThickness = 3,
+                ////    Stretch = Stretch.Uniform
+                ////};
+                Color gradientMiddle = GetColorBasedOnDistance(distance);
+                Color gradientBackground = Color.FromArgb(255, 172, 172, 172);
+                LinearGradientBrush linearGradientBrush = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0.5, 0),
+                    EndPoint = new Point(0.5, 1)
+                };
+                WriteToConsole("dst"+distance.ToString());
+                double offset = distance / 250.0;
+                WriteToConsole(offset.ToString());
+                offset = (double)1 - offset;
+                double offsetTop = offset - 0.15;
+                double offsetBottom = offset + 0.15;
+                offsetTop = Clamp(offsetTop, 0, 1);
+                offsetBottom = Clamp(offsetBottom, 0, 1);
+                linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetTop));
+                linearGradientBrush.GradientStops.Add(new GradientStop(gradientMiddle, offset));
+                linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetBottom));
+                RadarTriangle.Fill = linearGradientBrush;
+                ////RadarGrid.Children.Clear();
+                ////RadarGrid.Children.Add(radarTriangle);
+                WriteToConsole(offset.ToString() + "   " + offsetTop.ToString());
+            });
         }
 
-        private double Clamp(double val, double min, double max) 
+        ////private System.Windows.Media.PointCollection GetTrianglePoints()
+        ////{
+        ////    System.Windows.Point Point1 = new System.Windows.Point(0, 0);
+        ////    System.Windows.Point Point2 = new System.Windows.Point(0, 80);
+        ////    System.Windows.Point Point3 = new System.Windows.Point(40, 100);
+        ////    System.Windows.Media.PointCollection myPointCollection = new System.Windows.Media.PointCollection
+        ////    {
+        ////        Point1,
+        ////        Point2,
+        ////        Point3
+        ////    };
+        ////    return myPointCollection;
+        ////}
+
+        private double Clamp(double val, double min, double max)
         {
             if (val.CompareTo(min) < 0) return min;
             else if (val.CompareTo(max) > 0) return max;
@@ -293,6 +324,41 @@ namespace Pontor
                 ConsoleOutput.Text += DateTime.Now.ToString() + " : ";
                 ConsoleOutput.Text += message + "\n";
             });
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Thread t = new Thread(() =>
+              {
+
+                  Thread.Sleep(1000);
+                  if (serialPort != null && serialPort.IsOpen)
+                  {
+                      DisconnectFromBluetooth();
+                      //serialPort.Close();
+                  }
+                  try
+                  {
+                      serialPort = new SerialPort("COM6", 9600);
+                      serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
+                      serialPort.NewLine = "\r\n";
+                      WriteToConsole("Bluetooth : Atempting to connect to "  + "...");
+                      serialPort.Open();
+                      serialPort.Write("WHO AM I");
+                      WriteToConsole("Bluetooth : Connection opened to " );
+                      isBluetoothConnected = false;
+                  }
+                  catch (Exception ex)
+                  {
+                      if (serialPort.IsOpen)
+                          serialPort.Close();
+                      MessageBox.Show(ex.ToString());
+                  }
+                  finally
+                  {
+
+                  }
+              });t.Start();
         }
     }
 }

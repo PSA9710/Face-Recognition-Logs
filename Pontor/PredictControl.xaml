@@ -23,16 +23,16 @@
                 <Label Name="StateLabel" Content="No Person in Range" FontSize="24" VerticalContentAlignment="Center"/>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="2">
+        <Grid x:Name="RadarGrid" Grid.Row="2">
             <Polygon x:Name="RadarTriangle" Points="0,0 80,0 40,100" Stretch="Uniform" Stroke="Black" StrokeThickness="3">
                 <Polygon.Fill>
-                    <LinearGradientBrush x:Name="RadarLiniarGradientBrush" EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
-                        <GradientStop x:Name="gradientTop" Color="#FFACACAC" Offset="0.376"/>
-                        <GradientStop x:Name="gradientMiddle" Color="Lime" Offset="0.557"/>
-                        <GradientStop x:Name="gradientBottom" Color="#FFACACAC" Offset="0.768"/>
+                    <LinearGradientBrush x:Name="LinearGradientBrushTriangle" EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#FFD4D4D4" Offset="0.365"/>
+                        <GradientStop Color="Red" Offset="0.572"/>
                     </LinearGradientBrush>
                 </Polygon.Fill>
             </Polygon>
         </Grid>
+        <Button Content="Button" HorizontalAlignment="Left" Margin="70,14,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
     </Grid>
 </UserControl>
