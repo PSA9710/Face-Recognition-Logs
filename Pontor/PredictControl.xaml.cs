@@ -42,8 +42,6 @@ namespace Pontor
         public event EventHandler MessageRecieved;
 
 
-        
-
 
         public PredictControl(TextBlock textBlock)
         {
@@ -148,33 +146,62 @@ namespace Pontor
         private void DistanceMessage(string message)
         {
             message = message.Remove(0, 9);
+
             WriteToConsole(message);
             int distance = Convert.ToInt32(message);
             if (distance < 250)
             {
-                float offset = distance / 250;
-                byte alpha = 255;
-                byte red = 0, blue = 0, green = 0;
-                if (distance > 180)
-                {
-                    red = 255;
-                    green = 255;
-                }
-                else if (distance > 40)
-                {
-                    green = 255;
-                }
-                else
-                {
-                    red = 255;
-                }
-
-                Dispatcher.Invoke(() =>
-                {
-                    gradientMiddle.Color = Color.FromArgb(alpha, red, green, blue);
-                    gradientMiddle.Offset = offset;
-                });
+                ChangeLinearGradientBrushTriangle(distance);
             }
+        }
+
+        private void ChangeLinearGradientBrushTriangle(int distance)
+        {
+            Color gradientMiddle = GetColorBasedOnDistance(distance);
+            Color gradientBackground = Color.FromArgb(255, 172, 172, 172);
+            LinearGradientBrush linearGradientBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0.5, 0),
+                EndPoint = new Point(0.5, 1)
+            };
+            double offset = distance / 250;
+            double offsetTop = offset - 0.15;
+            double offsetBottom = offset + 0.15;
+            offsetTop = Clamp(offsetTop, 0, 1);
+            offsetBottom = Clamp(offsetBottom, 0, 1);
+            linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetTop));
+            linearGradientBrush.GradientStops.Add(new GradientStop(gradientMiddle, offset));
+            linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetBottom));
+
+            Dispatcher.Invoke(() => { RadarTriangle.Fill = linearGradientBrush; });
+        }
+
+        private double Clamp(double val, double min, double max) 
+        {
+            if (val.CompareTo(min) < 0) return min;
+            else if (val.CompareTo(max) > 0) return max;
+            else return val;
+        }
+
+        private Color GetColorBasedOnDistance(int distance)
+        {
+            float offset = distance / 250;
+            byte alpha = 255;
+            byte red = 0, blue = 0, green = 0;
+            if (distance > 180)
+            {
+                red = 255;
+                green = 255;
+            }
+            else if (distance > 40)
+            {
+                green = 255;
+            }
+            else
+            {
+                red = 255;
+            }
+            return Color.FromArgb(alpha, red, green, blue);
         }
 
         private void LEDMessage()

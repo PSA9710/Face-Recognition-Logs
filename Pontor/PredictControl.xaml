@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Pontor.PredictControl"
+﻿<UserControl x:Name="PredictControl1" x:Class="Pontor.PredictControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -24,12 +24,12 @@
             </StackPanel>
         </Grid>
         <Grid Grid.Row="2">
-            <Polygon Points="0,0 80,0 40,100" Stretch="Uniform" Stroke="Black" StrokeThickness="3">
+            <Polygon x:Name="RadarTriangle" Points="0,0 80,0 40,100" Stretch="Uniform" Stroke="Black" StrokeThickness="3">
                 <Polygon.Fill>
-                    <LinearGradientBrush EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
-                        <GradientStop x:Name="gradientTop" Color="#FFACACAC"/>
-                        <GradientStop x:Name="gradientMiddle" Color="Lime" Offset="0.62"/>
-                        <GradientStop x:Name="gradientBottom" Color="#FFACACAC" Offset="1"/>
+                    <LinearGradientBrush x:Name="RadarLiniarGradientBrush" EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
+                        <GradientStop x:Name="gradientTop" Color="#FFACACAC" Offset="0.376"/>
+                        <GradientStop x:Name="gradientMiddle" Color="Lime" Offset="0.557"/>
+                        <GradientStop x:Name="gradientBottom" Color="#FFACACAC" Offset="0.768"/>
                     </LinearGradientBrush>
                 </Polygon.Fill>
             </Polygon>
