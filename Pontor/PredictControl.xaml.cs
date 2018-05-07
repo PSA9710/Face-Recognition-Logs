@@ -34,6 +34,7 @@ namespace Pontor
         bool isBluetoothConnected = false;
         Dictionary<String, String> bluetoothDevices = new Dictionary<string, string>();
         TextBlock ConsoleOutput;
+        ScrollViewer consoleScrollViewer;
         private string bluetoothDeviceName;
         private string bluetoothDevicePort;
 
@@ -43,11 +44,11 @@ namespace Pontor
 
 
 
-        public PredictControl(TextBlock textBlock)
+        public PredictControl(TextBlock textBlock,ScrollViewer scroll)
         {
             InitializeComponent();
             ConsoleOutput = textBlock;
-
+            consoleScrollViewer = scroll;
             WriteToConsole("Bluetooth : Starting devices query");
             Thread t = new Thread(() => { PopulateComboBoxWithSerialPorts(); });
             t.Start();
@@ -122,13 +123,15 @@ namespace Pontor
 
         private void MessageReciever(object sender, SerialDataReceivedEventArgs e)
         {
-            message = serialPort.ReadLine();
-            //MessageBox.Show(message);
+            message += serialPort.ReadExisting();
+            ////WriteToConsole(message);
+            ////MessageBox.Show(message);
             if (!isBluetoothConnected)
             {
                 CheckIfCorrectBluetooth();
             }
-            ProcessMessage();
+            else
+                ProcessMessage();
 
         }
 
@@ -136,17 +139,22 @@ namespace Pontor
         {
             if (message.Length == 1)
             {
-                LEDMessage();
+                ////LEDMessage();
             }
-            if (message.Contains("Distance:"))
+
+            var messages = message.Split('!');
+            message = messages[messages.Length - 1];
+            messages = messages.Take(messages.Count() - 1).ToArray();
+            foreach (String str in messages)
             {
-                DistanceMessage(message);
+              ////  WriteToConsole(str);
+               DistanceMessage(str);
             }
         }
 
         private void DistanceMessage(string message)
         {
-            message = message.Remove(0, 9);
+            //message = message.Remove(0, 4);
 
             WriteToConsole(message);
             int distance = Convert.ToInt32(message);
@@ -154,6 +162,12 @@ namespace Pontor
             {
                 ChangeLinearGradientBrushTriangle(distance);
             }
+            else
+                Dispatcher.Invoke(() =>
+                {
+                    if (RadarTriangle.Fill != null)
+                        RadarTriangle.Fill = null;
+                });
         }
 
         private void ChangeLinearGradientBrushTriangle(int distance)
@@ -175,9 +189,9 @@ namespace Pontor
                     StartPoint = new Point(0.5, 0),
                     EndPoint = new Point(0.5, 1)
                 };
-                WriteToConsole("dst"+distance.ToString());
+                ////WriteToConsole("dst" + distance.ToString());
                 double offset = distance / 250.0;
-                WriteToConsole(offset.ToString());
+                ////WriteToConsole(offset.ToString());
                 offset = (double)1 - offset;
                 double offsetTop = offset - 0.15;
                 double offsetBottom = offset + 0.15;
@@ -187,25 +201,8 @@ namespace Pontor
                 linearGradientBrush.GradientStops.Add(new GradientStop(gradientMiddle, offset));
                 linearGradientBrush.GradientStops.Add(new GradientStop(gradientBackground, offsetBottom));
                 RadarTriangle.Fill = linearGradientBrush;
-                ////RadarGrid.Children.Clear();
-                ////RadarGrid.Children.Add(radarTriangle);
-                WriteToConsole(offset.ToString() + "   " + offsetTop.ToString());
             });
         }
-
-        ////private System.Windows.Media.PointCollection GetTrianglePoints()
-        ////{
-        ////    System.Windows.Point Point1 = new System.Windows.Point(0, 0);
-        ////    System.Windows.Point Point2 = new System.Windows.Point(0, 80);
-        ////    System.Windows.Point Point3 = new System.Windows.Point(40, 100);
-        ////    System.Windows.Media.PointCollection myPointCollection = new System.Windows.Media.PointCollection
-        ////    {
-        ////        Point1,
-        ////        Point2,
-        ////        Point3
-        ////    };
-        ////    return myPointCollection;
-        ////}
 
         private double Clamp(double val, double min, double max)
         {
@@ -235,40 +232,45 @@ namespace Pontor
             return Color.FromArgb(alpha, red, green, blue);
         }
 
-        private void LEDMessage()
-        {
-            Dispatcher.Invoke(() =>
-            {
-                if (message == "R")
-                {
-                    LED.Fill = new SolidColorBrush(Colors.Red);
-                }
-                else if (message == "Y")
-                {
-                    LED.Fill = new SolidColorBrush(Colors.Yellow);
-                }
-                else if (message == "G")
-                {
-                    LED.Fill = new SolidColorBrush(Colors.Lime);
-                }
-                if (MessageRecieved != null)
-                    MessageRecieved(this, EventArgs.Empty);
-            });
+        ////private void LEDMessage()
+        ////{
+        ////    Dispatcher.Invoke(() =>
+        ////    {
+        ////        if (message == "R")
+        ////        {
+        ////            LED.Fill = new SolidColorBrush(Colors.Red);
+        ////        }
+        ////        else if (message == "Y")
+        ////        {
+        ////            LED.Fill = new SolidColorBrush(Colors.Yellow);
+        ////        }
+        ////        else if (message == "G")
+        ////        {
+        ////            LED.Fill = new SolidColorBrush(Colors.Lime);
+        ////        }
+        ////        if (MessageRecieved != null)
+        ////            MessageRecieved(this, EventArgs.Empty);
+        ////    });
 
-        }
+        ////}
 
         private void CheckIfCorrectBluetooth()
         {
             //if (message.Contains("ROOT"))
-            if (message == "YOU ARE ROOT")
-            {
-                WriteToConsole("Succesfully connected to " + bluetoothDeviceName);
-                isBluetoothConnected = true;
-            }
-            else
-            {
-                DisconnectFromBluetooth();
-            }
+            if (message.Length == 12)
+                if (message == "YOU ARE ROOT")
+                {
+                    WriteToConsole("Succesfully connected to " + bluetoothDeviceName);
+                    isBluetoothConnected = true;
+                    serialPort.Write("OK");
+                    message = null;
+                }
+                else
+                {
+
+                    DisconnectFromBluetooth();
+
+                }
         }
 
         public void DisconnectFromBluetooth()
@@ -323,6 +325,7 @@ namespace Pontor
             {
                 ConsoleOutput.Text += DateTime.Now.ToString() + " : ";
                 ConsoleOutput.Text += message + "\n";
+                consoleScrollViewer.ScrollToBottom();
             });
         }
 
@@ -342,10 +345,11 @@ namespace Pontor
                       serialPort = new SerialPort("COM6", 9600);
                       serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
                       serialPort.NewLine = "\r\n";
-                      WriteToConsole("Bluetooth : Atempting to connect to "  + "...");
+                      WriteToConsole("Bluetooth : Atempting to connect to " + "...");
                       serialPort.Open();
+                      Thread.Sleep(100);
                       serialPort.Write("WHO AM I");
-                      WriteToConsole("Bluetooth : Connection opened to " );
+                      WriteToConsole("Bluetooth : Connection opened to ");
                       isBluetoothConnected = false;
                   }
                   catch (Exception ex)
@@ -358,7 +362,7 @@ namespace Pontor
                   {
 
                   }
-              });t.Start();
+              }); t.Start();
         }
     }
 }

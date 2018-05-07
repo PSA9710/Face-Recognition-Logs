@@ -77,7 +77,7 @@ namespace Pontor
             PopulateStreamOptions();
 
 
-            predictControl = new PredictControl(ConsoleOutput);
+            predictControl = new PredictControl(ConsoleOutput,ConsoleScrollBar);
             predictControl.MessageRecieved += new EventHandler(MessageRecieved);
             trainingControl.writeToConsole += new EventHandler(trainingControlWriteToConsole);
 
