@@ -49,7 +49,7 @@ namespace Pontor
         int sizeToBeSaved = 100;//size of the picture wich will be saved
 
         //WebCameraControl WebCam;
-
+        Stopwatch sw = new Stopwatch();
 
         TrainingControl trainingControl = new TrainingControl();
         PredictControl predictControl;
@@ -338,8 +338,7 @@ namespace Pontor
 
         private void ProcessWithGPU(Mat bmp)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+            ////sw.Start();
             using (Image<Bgr, byte> capturedImage = bmp.ToImage<Bgr, byte>())
             {
                 using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp))
@@ -373,8 +372,8 @@ namespace Pontor
                     imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap());
                 });
             }
-            sw.Stop();
-            WriteToConsole("GPU   "+sw.Elapsed.Milliseconds.ToString());
+            ////sw.Stop();
+            ////WriteToConsole("GPU   " + sw.Elapsed.Milliseconds.ToString());
         }
 
         private Rectangle[] FindFacesUsingGPU(CudaImage<Gray, byte> cudaCapturedImage)
@@ -394,8 +393,8 @@ namespace Pontor
         #region CPU PROCESSING
         private void ProcessWithCPU(Mat bmp)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+
+            ////sw.Start();
             using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
@@ -423,8 +422,11 @@ namespace Pontor
                         { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
                 }
             }
-            sw.Stop();
-            WriteToConsole("CPU  "+sw.Elapsed.Milliseconds.ToString());
+            ////sw.Stop();
+            ////long timp = sw.ElapsedMilliseconds;
+            ////if (timp > 40)
+            ////    WriteToConsole("CPU  " + timp.ToString());
+            ////sw.Reset();
         }
 
 

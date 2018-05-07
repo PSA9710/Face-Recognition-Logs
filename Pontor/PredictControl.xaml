@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" >
             <Label Content="Select Bluetooth device:" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
-            <ComboBox Name="BluetoothDevicesList" Width="100" Margin="0,0,10,0" SelectionChanged="BluetoothDevicesList_SelectionChanged" VerticalContentAlignment="Center" />
+            <ComboBox Name="BluetoothDevicesList" Width="100" Margin="0,0,10,0" SelectionChanged="BluetoothDevicesList_SelectionChanged" VerticalContentAlignment="Center" IsEnabled="False"/>
             <Button Name="Connect" Margin="10,0,10,0" Content="Connect" Width="68"/>
             <Button Name="Disconnect" Content="Disconnect" Width="70"/>
         </StackPanel>
