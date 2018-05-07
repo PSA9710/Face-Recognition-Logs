@@ -156,7 +156,7 @@ namespace Pontor
         {
             //message = message.Remove(0, 4);
 
-            WriteToConsole(message);
+            ////WriteToConsole(message);
             int distance = Convert.ToInt32(message);
             if (distance < 250)
             {

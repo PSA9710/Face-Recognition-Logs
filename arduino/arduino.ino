@@ -1,4 +1,7 @@
 #include <SoftwareSerial.h>
+#define H 'H'
+#define L 'L'
+
 
 int bluetoothTx = 2;  // TX-O pin of bluetooth mate, Arduino D2
 int bluetoothRx = 3;  // RX-I pin of bluetooth mate, Arduino D3
@@ -7,8 +10,16 @@ int ledGreen = 10;
 int ledYellow = 9;
 int ledRed = 8;
 
-int triggerDistance=7;
-int echoDistance=6;
+int triggerDistancePin = 7;
+int echoDistancePin = 6;
+
+int threshold = 250; //the maximum distance accepted in mm
+float distance = 300;
+bool isInRange = false;
+bool isConnected = false;
+
+unsigned long startMilliSeconds = 0;
+
 
 SoftwareSerial bluetooth(bluetoothTx, bluetoothRx);
 
@@ -25,54 +36,102 @@ void setup()
   // 115200 can be too fast at times for NewSoftSerial to relay the data reliably
   bluetooth.begin(9600);  // Start bluetooth serial at 9600
 
-  
-  
+
+
   pinMode(ledGreen, OUTPUT);
   pinMode(ledYellow, OUTPUT);
   pinMode(ledRed, OUTPUT);
-  pinMode(ECHOPIN, INPUT);
-  pinMode(TRIGPIN, OUTPUT);
+  pinMode(echoDistancePin, INPUT);
+  pinMode(triggerDistancePin, OUTPUT);
+  startMilliSeconds = millis();
 
-  
+
 }
 
 void loop()
-{
+{ String z = "";
   if (bluetooth.available()) // If the bluetooth sent any characters
   {
-    char c = (char)bluetooth.read();
-    // Send any characters the bluetooth prints to the serial monitor
-    Serial.print(c);
-    SwitchLedGreen(c);
-    SwitchLedYellow(c);
-    SwitchLedRed(c);
-
+    z = bluetooth.readString();
+    Serial.print(z);
   }
-  if (Serial.available()) // If stuff was typed in the serial monitor
+
+  if (z == "WHO AM I") {
+    bluetooth.print("YOU ARE ROOT");
+    Serial.println("ROOT");
+    delay(1000);
+    z=bluetooth.readString();
+    if(z=="OK")
+    isConnected = true;
+   
+  }
+  if (z == "BYEbye")
   {
-    // Send any characters the Serial monitor prints to the bluetooth
-    bluetooth.print((char)Serial.read());
+    isConnected = false;
+    SwitchLedYellow(L);
+    SwitchLedRed(L);
+    SwitchLedGreen(L);
   }
+  if (isConnected)
+  {
 
-  CalculateDistance()
-  // and loop forever and ever!
+    CalculateDistance();
+    // and loop forever and ever!
+  }
 }
 
 
 float CalculateDistance()
 {
-  digitalWrite(TRIGPIN, LOW);
+  bool isInRangeOld = isInRange;
+  digitalWrite(triggerDistancePin, LOW);
   delayMicroseconds(2);
-  digitalWrite(TRIGPIN, HIGH);
+  digitalWrite(triggerDistancePin, HIGH);
   delayMicroseconds(10);
-  digitalWrite(TRIGPIN, LOW);
+  digitalWrite(triggerDistancePin, LOW);
   // Compute distance
-  float distance = pulseIn(ECHOPIN, HIGH);
-  distance= distance/58;
-  Serial.println(distance);
+  distance = pulseIn(echoDistancePin, HIGH);
+  distance = distance / 58;
+ // Serial.println(distance);
+  if (distance > threshold)
+  {
+    isInRange = false;
+    if (isInRange != isInRangeOld)
+    {
+      SwitchLedYellow(L);
+      SwitchLedRed(H);
+     // bluetooth.println("R");
+    }
+  }
+  else
+  {
+    isInRange = true;
+    if (isInRange != isInRangeOld)
+    {
+      SwitchLedYellow(H);
+      SwitchLedRed(L);
+     // bluetooth.println("Y");
+    }
+  }
+  SendDistanceAfterTime();
   delay(200);
 }
 
+void SendDistanceAfterTime()
+{
+  unsigned long currentTime = millis();
+  unsigned long elapsedMilliSeconds = currentTime - startMilliSeconds;
+ // if (elapsedMilliSeconds > 500)
+  {
+    int dst = (int)distance;
+    //bluetooth.print("DST:"); 
+    bluetooth.print(dst);
+    bluetooth.print("!");   //message divider
+    delay(20); //delay to allow message to be transmitted
+    //Serial.println("trimis");
+    startMilliSeconds = millis();
+  }
+}
 
 void SwitchLedGreen(char c)
 {

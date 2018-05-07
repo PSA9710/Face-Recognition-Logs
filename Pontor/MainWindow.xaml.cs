@@ -77,7 +77,7 @@ namespace Pontor
             PopulateStreamOptions();
 
 
-            predictControl = new PredictControl(ConsoleOutput,ConsoleScrollBar);
+            predictControl = new PredictControl(ConsoleOutput, ConsoleScrollBar);
             predictControl.MessageRecieved += new EventHandler(MessageRecieved);
             trainingControl.writeToConsole += new EventHandler(trainingControlWriteToConsole);
 
@@ -157,7 +157,7 @@ namespace Pontor
             }
             else
             {
-                
+
                 isCudaEnabled = false;
                 hardwareSelector.IsEnabled = false;
             }
@@ -305,7 +305,7 @@ namespace Pontor
                   }
                   else
                   {
-                     // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
+                      // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
                       WebCam = new VideoCapture(Convert.ToInt32(option));
                       WriteToConsole("Camera : Connected to internal camera");
                   }
@@ -338,6 +338,8 @@ namespace Pontor
 
         private void ProcessWithGPU(Mat bmp)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             using (Image<Bgr, byte> capturedImage = bmp.ToImage<Bgr, byte>())
             {
                 using (CudaImage<Bgr, byte> cudaCapturedImage = new CudaImage<Bgr, byte>(bmp))
@@ -371,6 +373,8 @@ namespace Pontor
                     imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap());
                 });
             }
+            sw.Stop();
+            WriteToConsole("GPU   "+sw.Elapsed.Milliseconds.ToString());
         }
 
         private Rectangle[] FindFacesUsingGPU(CudaImage<Gray, byte> cudaCapturedImage)
@@ -390,6 +394,8 @@ namespace Pontor
         #region CPU PROCESSING
         private void ProcessWithCPU(Mat bmp)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             using (Image<Bgr, byte> capturedImage = new Image<Bgr, byte>(bmp.Bitmap))
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
@@ -417,6 +423,8 @@ namespace Pontor
                         { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
                 }
             }
+            sw.Stop();
+            WriteToConsole("CPU  "+sw.Elapsed.Milliseconds.ToString());
         }
 
 
