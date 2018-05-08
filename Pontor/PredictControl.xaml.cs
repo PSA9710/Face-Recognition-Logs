@@ -20,6 +20,8 @@ using Emgu.CV.Structure;
 using InTheHand.Net.Sockets;
 using System.Management;
 using System.Threading;
+using System.Drawing;
+using System.Windows.Interop;
 
 namespace Pontor
 {
@@ -28,6 +30,11 @@ namespace Pontor
     /// </summary>
     public partial class PredictControl : UserControl
     {
+
+        
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+
 
         List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
         public SerialPort serialPort;
@@ -40,6 +47,8 @@ namespace Pontor
 
 
         public String message;
+        private bool isPersonInRange=true;
+
         public event EventHandler MessageRecieved;
 
 
@@ -58,22 +67,29 @@ namespace Pontor
 
         private void PopulateComboBoxWithSerialPorts()
         {
-            BluetoothClient client = new BluetoothClient();
-            var devices = client.DiscoverDevicesInRange();
-            int i = 0;
-            foreach (BluetoothDeviceInfo d in devices)
+            try
             {
-
-                string s = GetBluetoothPort(deviceAddress: d.DeviceAddress.ToString());
-                if (s != null)
+                BluetoothClient client = new BluetoothClient();
+                var devices = client.DiscoverDevicesInRange();
+                int i = 0;
+                foreach (BluetoothDeviceInfo d in devices)
                 {
-                    bluetoothDevices.Add(d.DeviceName, s);
-                    i++;
-                    Dispatcher.Invoke(() => BluetoothDevicesList.Items.Add(d.DeviceName));
+
+                    string s = GetBluetoothPort(deviceAddress: d.DeviceAddress.ToString());
+                    if (s != null)
+                    {
+                        bluetoothDevices.Add(d.DeviceName, s);
+                        i++;
+                        Dispatcher.Invoke(() => BluetoothDevicesList.Items.Add(d.DeviceName));
+                    }
                 }
+                WriteToConsole("Bluetooth : Query finished! Found " + i.ToString() + " devices");
+                Dispatcher.Invoke(() => BluetoothDevicesList.IsEnabled = true);
             }
-            WriteToConsole("Bluetooth : Query finished! Found " + i.ToString() + " devices");
-            Dispatcher.Invoke(() => BluetoothDevicesList.IsEnabled = true);
+            catch(Exception e)
+            {
+                MessageBox.Show("Bluetooth not open or connected. Please turn it on and restart the app!");
+            }
         }
 
 
@@ -161,12 +177,14 @@ namespace Pontor
             if (distance < 250)
             {
                 ChangeLinearGradientBrushTriangle(distance);
+                isPersonInRange = true;
             }
             else
                 Dispatcher.Invoke(() =>
                 {
                     if (RadarTriangle.Fill != null)
                         RadarTriangle.Fill = null;
+                    isPersonInRange = false;
                 });
         }
 
@@ -182,12 +200,12 @@ namespace Pontor
                 ////    StrokeThickness = 3,
                 ////    Stretch = Stretch.Uniform
                 ////};
-                Color gradientMiddle = GetColorBasedOnDistance(distance);
-                Color gradientBackground = Color.FromArgb(255, 172, 172, 172);
+                System.Windows.Media.Color gradientMiddle = GetColorBasedOnDistance(distance);
+                System.Windows.Media.Color gradientBackground = System.Windows.Media.Color.FromArgb(255, 172, 172, 172);
                 LinearGradientBrush linearGradientBrush = new LinearGradientBrush
                 {
-                    StartPoint = new Point(0.5, 0),
-                    EndPoint = new Point(0.5, 1)
+                    StartPoint = new System.Windows.Point(0.5, 0),
+                    EndPoint = new System.Windows.Point(0.5, 1)
                 };
                 ////WriteToConsole("dst" + distance.ToString());
                 double offset = distance / 250.0;
@@ -211,7 +229,7 @@ namespace Pontor
             else return val;
         }
 
-        private Color GetColorBasedOnDistance(int distance)
+        private System.Windows.Media.Color GetColorBasedOnDistance(int distance)
         {
             float offset = distance / 250;
             byte alpha = 255;
@@ -229,7 +247,7 @@ namespace Pontor
             {
                 red = 255;
             }
-            return Color.FromArgb(alpha, red, green, blue);
+            return System.Windows.Media.Color.FromArgb(alpha, red, green, blue);
         }
 
         ////private void LEDMessage()
@@ -363,6 +381,117 @@ namespace Pontor
 
                   }
               }); t.Start();
+        }
+
+        private void Connect_Click(object sender, RoutedEventArgs e)
+        {
+            Thread t = new Thread(() =>
+            {
+
+                Thread.Sleep(1000);
+                if (serialPort != null && serialPort.IsOpen)
+                {
+                    DisconnectFromBluetooth();
+                    //serialPort.Close();
+                }
+                try
+                {
+                    serialPort = new SerialPort("COM6", 9600);
+                    serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
+                    serialPort.NewLine = "\r\n";
+                    WriteToConsole("Bluetooth : Atempting to connect to " + "...");
+                    serialPort.Open();
+                    Thread.Sleep(100);
+                    serialPort.Write("WHO AM I");
+                    WriteToConsole("Bluetooth : Connection opened to ");
+                    isBluetoothConnected = false;
+                }
+                catch (Exception ex)
+                {
+                    if (serialPort.IsOpen)
+                        serialPort.Close();
+                    MessageBox.Show(ex.ToString());
+                }
+                finally
+                {
+
+                }
+            }); t.Start();
+        }
+
+        private void Disconnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (serialPort != null && serialPort.IsOpen)
+            {
+                DisconnectFromBluetooth();
+                //serialPort.Close();
+            }
+        }
+
+        List<Image<Gray, byte>> medianDetectedFacesList = new List<Image<Gray, byte>>();
+        List<int> medianDetectedIdList = new List<int>();
+
+        public void getMedianFaceRecognition(Image<Gray,byte> image,int id)
+        {
+            if (!isPersonInRange) return;
+            if (id == -1) return;
+            if(medianDetectedFacesList.Count==10 && medianDetectedIdList.Count==10)
+            {
+                ProcessTheMedianLists();
+                medianDetectedFacesList.Clear();
+                medianDetectedIdList.Clear();
+            }
+            else
+            {
+                medianDetectedIdList.Add(id);
+                medianDetectedFacesList.Add(image.Copy());
+            }
+        }
+
+        private void ProcessTheMedianLists()
+        {
+            WriteToConsole("proccesthemedianlist");
+            int idWithMostOccurences = medianDetectedIdList[0];
+            int value = -1;
+            var idOccurrences = medianDetectedIdList.GroupBy(i => i).ToDictionary(g => g.Key, g => g.Count());
+            foreach(var idOccurrence in idOccurrences)
+            {
+                if (idOccurrence.Value > value)
+                {
+                    idWithMostOccurences = idOccurrence.Key;
+                    value = idOccurrence.Value;
+                }
+            }
+            if (value >= 8)
+            {
+                MessageBox.Show(value.ToString());
+                AddDetectedFaceToDisplay(medianDetectedFacesList[medianDetectedIdList.IndexOf(idWithMostOccurences)]);
+            }
+            ////throw new NotImplementedException();
+        }
+
+        public void AddDetectedFaceToDisplay(Image<Gray,byte> detectedFace)
+        {
+            if (!isPersonInRange) return;
+            Dispatcher.Invoke(() =>
+            {
+            ImageSource imageSource = ConvertToImageSource(detectedFace.ToBitmap());
+            Border border = new Border() { Padding = new Thickness(5) };
+            border.Child = new System.Windows.Controls.Image() { Source = imageSource, Width = 95, Height = 95 };
+                displayDetectedFaces.Children.Add(border);
+            });
+            WriteToConsole("Added face to console");
+        }
+
+        private ImageSource ConvertToImageSource(Bitmap bmp)
+        {
+
+            IntPtr hBitmap = bmp.GetHbitmap();
+            ImageSource wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            bmp.Dispose();
+            DeleteObject(hBitmap);
+            return wpfBitmap;
+
         }
     }
 }

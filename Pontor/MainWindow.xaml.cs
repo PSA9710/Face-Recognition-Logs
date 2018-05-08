@@ -357,7 +357,9 @@ namespace Pontor
                                 }
                                 else
                                 {
-                                    var personName = PredictFace(graycopy);
+                                    int id = -1;
+                                    var personName = PredictFace(graycopy,out id);
+                                    predictControl.getMedianFaceRecognition(graycopy, id);
                                     //place name of the person on the image
                                     CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                                 }
@@ -411,7 +413,9 @@ namespace Pontor
                             }
                             else
                             {
-                                var personName = PredictFace(graycopy);
+                                int id=-1;
+                                var personName = PredictFace(graycopy,out id);
+                                predictControl.getMedianFaceRecognition(graycopy, id);
                                 //place name of the person on the image
                                 CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                             }
@@ -449,17 +453,20 @@ namespace Pontor
                 }
         }
 
-        private String PredictFace(Image<Gray, byte> image)
+        private String PredictFace(Image<Gray, byte> image,out int id)
         {
             String personName;
             if (!isTraining)
             {
                 var result = faceRecognizer.Predict(image);
                 personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                id = result.Label;
+
             }
             else
             {
                 personName = "IN-TRAINING";
+                id = -1;
             }
             return personName;
         }

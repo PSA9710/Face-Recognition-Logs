@@ -14,8 +14,8 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" >
             <Label Content="Select Bluetooth device:" VerticalContentAlignment="Center" Margin="0,0,10,0"/>
             <ComboBox Name="BluetoothDevicesList" Width="100" Margin="0,0,10,0" SelectionChanged="BluetoothDevicesList_SelectionChanged" VerticalContentAlignment="Center" IsEnabled="False"/>
-            <Button Name="Connect" Margin="10,0,10,0" Content="Connect" Width="68"/>
-            <Button Name="Disconnect" Content="Disconnect" Width="70"/>
+            <Button Name="Connect" Margin="10,0,10,0" Content="Connect" Width="68" Click="Connect_Click"/>
+            <Button Name="Disconnect" Content="Disconnect" Width="70" Click="Disconnect_Click"/>
         </StackPanel>
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
@@ -56,16 +56,27 @@
                 <Polygon x:Name="RadarTriangle" Points="0,0 80,0 60,100 40,50 20,100" Stretch="Fill" Stroke="Black" StrokeThickness="3" Grid.Row="1" Grid.Column="1">
                     <Polygon.Fill>
                         <LinearGradientBrush x:Name="LinearGradientBrushTriangle" EndPoint="0.5,1" StartPoint="0.5,0">
-                            <GradientStop Color="#FFB2B2B2" Offset="0.797"/>
-                            <GradientStop Color="#FF27FF05" Offset="0.845"/>
-                            <GradientStop Color="#FFB0B0B0" Offset="0.93"/>
-                            <GradientStop Color="#FFE14242" Offset="0.893"/>
+                            <GradientStop Color="#FFB2B2B2" Offset="0.4"/>
+                            <GradientStop Color="#FF27FF05" Offset="0.425"/>
+                            <GradientStop Color="#FFE14242" Offset="0.525"/>
+                            <GradientStop Color="#FFB0B0B0" Offset="0.55"/>
                         </LinearGradientBrush>
                     </Polygon.Fill>
                 </Polygon>
                 <Border Grid.Row="2" Margin="30,10" Background="#FF005555" MinHeight="25" Grid.Column="1">
                     <Label Content="Distance Sensor" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
+            </Grid>
+            <Grid Grid.Column="1" Grid.RowSpan="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Content="Detected Faces in last minute" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="20" Grid.Column="1" />
+                <ScrollViewer Grid.Row="1">
+                    <WrapPanel Name="displayDetectedFaces">                        
+                    </WrapPanel>
+                </ScrollViewer>
             </Grid>
         </Grid>
         <Button Content="Button" HorizontalAlignment="Left" Margin="70,14,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
