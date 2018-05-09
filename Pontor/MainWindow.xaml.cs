@@ -260,6 +260,7 @@ namespace Pontor
             try
             {
                 Mat m = new Mat();
+                
                 WebCam.Retrieve(m);
                 if (m != null)
                     if (isCudaEnabled && isGpuEnabled)
@@ -322,15 +323,23 @@ namespace Pontor
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            if (WebCam != null)
+            try
             {
-                WriteToConsole("Camera : Camera stopped");
-                WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
-                WebCam.Stop();
-                WebCam.Dispose();
+                if (WebCam != null)
+                {
+                    WriteToConsole("Camera : Camera stopped");
+                    WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
+                    if(WebCam.IsOpened)
+                    WebCam.Stop();
+                   // WebCam.Dispose();
+                }
+                startCameraFeed.IsEnabled = true;
+                stopCameraFeed.IsEnabled = false;
             }
-            startCameraFeed.IsEnabled = true;
-            stopCameraFeed.IsEnabled = false;
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
 
@@ -346,7 +355,7 @@ namespace Pontor
                 {
                     using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
                     {
-                        if ((predictControl.ArduinoEnabled.IsChecked == true && predictControl.isBluetoothConnected) || predictControl.ArduinoEnabled.IsChecked == false)
+                        if ((predictControl.isArduinoEnabled == true && predictControl.isBluetoothConnected) || predictControl.isArduinoEnabled == false)
                         {
                             Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
                             foreach (Rectangle face in faces)
@@ -405,7 +414,7 @@ namespace Pontor
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
                 {
-                    if ((predictControl.ArduinoEnabled.IsChecked==true && predictControl.isBluetoothConnected) || predictControl.ArduinoEnabled.IsChecked == false)
+                    if ((predictControl.isArduinoEnabled==true && predictControl.isBluetoothConnected) || predictControl.isArduinoEnabled == false)
                     {
                         Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
                         foreach (Rectangle face in faces)
@@ -611,7 +620,7 @@ namespace Pontor
             if (WebCam != null)
             {
                 WebCam.Stop();
-                WebCam.Dispose();
+                //WebCam.Dispose();
             }
             if (faceRecognizer != null && !isTraining)
             {

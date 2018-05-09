@@ -364,14 +364,19 @@ namespace Pontor
             try
             {
                 serialPort.Write("BYEbye");
-                isBluetoothConnected = false;
-                message = "";
-                Connect.IsEnabled = true;
-                Disconnect.IsEnabled = false;
-                RemoveComPort();
+
             }
             catch (Exception)
             { }
+            finally
+            {
+                isBluetoothConnected = false;
+                message = "";
+                Dispatcher.Invoke(() => { Connect.IsEnabled = true;
+                Disconnect.IsEnabled = false;
+            });
+                RemoveComPort();
+            }
         }
 
         private void RemoveComPort()
@@ -519,6 +524,16 @@ namespace Pontor
             DeleteObject(hBitmap);
             return wpfBitmap;
 
+        }
+
+        private void ArduinoEnabled_Checked(object sender, RoutedEventArgs e)
+        {
+            isArduinoEnabled = true;
+        }
+
+        private void ArduinoEnabled_Unchecked(object sender, RoutedEventArgs e)
+        {
+            isArduinoEnabled = false;
         }
     }
 }
