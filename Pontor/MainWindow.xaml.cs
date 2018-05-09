@@ -161,7 +161,7 @@ namespace Pontor
             }
             else
             {
-
+                WriteToConsole("Cuda is not enabled on this device");
                 isCudaEnabled = false;
                 hardwareSelector.IsEnabled = false;
             }
