@@ -71,6 +71,9 @@ namespace Pontor
 
         private CascadeClassifier cpuClassifier;
         CudaCascadeClassifier cudaClassifier;
+
+        List<VideoCapture> videoCaptures = new List<VideoCapture>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -250,6 +253,7 @@ namespace Pontor
             foreach (FilterInfo info in x)
             {
                 StreamingOptions.Items.Add(id);
+                videoCaptures.Add(new VideoCapture(id));
                 id++;
             }
             StreamingOptions.Items.Add("VIA IP");
@@ -274,14 +278,15 @@ namespace Pontor
                         ProcessWithCPU(m);
                     }
             }
+            catch(System.AccessViolationException exx)
+            { }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
 
-
         }
-
+        
         private void Start_Click(object sender, RoutedEventArgs e)
         {
             if (StreamingOptions.SelectedIndex == -1)
@@ -308,7 +313,7 @@ namespace Pontor
                   else
                   {
                       // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
-                      WebCam = new VideoCapture(Convert.ToInt32(option));
+                      WebCam =  videoCaptures[Convert.ToInt32(option)];
                       WriteToConsole("Camera : Connected to internal camera");
                   }
                   WebCam.ImageGrabbed += WebCam_ImageGrabbed;
@@ -331,7 +336,8 @@ namespace Pontor
                     WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
                     if(WebCam.IsOpened)
                     WebCam.Stop();
-                   // WebCam.Dispose();
+                    //if(StreamingOptions.SelectedValue.ToString()!="VIA IP")
+                    //  WebCam.Dispose();
                 }
                 startCameraFeed.IsEnabled = true;
                 stopCameraFeed.IsEnabled = false;
