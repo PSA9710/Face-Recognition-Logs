@@ -22,6 +22,7 @@ using System.Management;
 using System.Threading;
 using System.Drawing;
 using System.Windows.Interop;
+using System.Timers;
 
 namespace Pontor
 {
@@ -31,9 +32,12 @@ namespace Pontor
     public partial class PredictControl : UserControl
     {
 
-        
+
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
+
+
+        Dictionary<int, Image<Gray, byte>> toBeSaved = new Dictionary<int, Image<Gray, byte>>();
 
 
         List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
@@ -47,13 +51,13 @@ namespace Pontor
 
 
         public String message;
-        private bool isPersonInRange=true;
+        private bool isPersonInRange = true;
 
         public event EventHandler MessageRecieved;
+        public System.Timers.Timer timerSave = new System.Timers.Timer();
 
 
-
-        public PredictControl(TextBlock textBlock,ScrollViewer scroll)
+        public PredictControl(TextBlock textBlock, ScrollViewer scroll)
         {
             InitializeComponent();
             ConsoleOutput = textBlock;
@@ -63,6 +67,50 @@ namespace Pontor
             t.Start();
 
 
+            timerSave.Elapsed += new ElapsedEventHandler(TimeToSave);
+            timerSave.Interval = 60000;
+            timerSave.Start();
+
+
+        }
+
+        private void TimeToSave(object state, ElapsedEventArgs e)
+        {
+            TimeToSaveFired();
+            ////throw new NotImplementedException();
+        }
+
+        public void TimeToSaveFired()
+        {
+            try
+            {
+                if (toBeSaved.Count == 0) { WriteToConsole("Minute Save : No faces were recorded in the last minute"); return; }
+                foreach (var reg in toBeSaved)
+                {
+                    long idLog = SqlManager.SQL_InsertIntoLogs(DateTime.Now.ToString(), reg.Key);
+                    saveImageToLogs(reg.Key, idLog);
+                }
+                toBeSaved.Clear();
+                Dispatcher.Invoke(() =>
+                {
+                    displayDetectedFaces.Children.Clear();
+                });
+                WriteToConsole("Minute Save : Records Saved");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+
+            }
+        }
+
+        private void saveImageToLogs(int key, long idLog)
+        {
+            var location = AppDomain.CurrentDomain.BaseDirectory.ToString();
+            location += "/Logs-Pictures/" + idLog.ToString() + ".bmp";
+            Image<Gray, byte> image = toBeSaved[key];
+            image.Save(location);
+            ////throw new NotImplementedException();
         }
 
         private void PopulateComboBoxWithSerialPorts()
@@ -86,7 +134,7 @@ namespace Pontor
                 WriteToConsole("Bluetooth : Query finished! Found " + i.ToString() + " devices");
                 Dispatcher.Invoke(() => BluetoothDevicesList.IsEnabled = true);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show("Bluetooth not open or connected. Please turn it on and restart the app!");
             }
@@ -102,6 +150,9 @@ namespace Pontor
                 WriteToConsole("Bluetooth : Selected " + bluetoothDeviceName + " " + bluetoothDevicePort);
                 Thread t = new Thread(() => ConnectToComPort(bluetoothDevicePort));
                 t.Start();
+
+                Disconnect.IsEnabled = true;
+                Connect.IsEnabled = false;
             }
 
         }
@@ -124,12 +175,13 @@ namespace Pontor
                 serialPort.Write("WHO AM I");
                 WriteToConsole("Bluetooth : Connection opened to " + bluetoothDeviceName);
                 isBluetoothConnected = false;
+                TimerForBluetoothConnection();
             }
-            catch (Exception e)
+            catch (System.IO.IOException e)
             {
                 if (serialPort.IsOpen)
                     serialPort.Close();
-                MessageBox.Show(e.ToString());
+                MessageBox.Show("Please reconnect the device to the PC");
             }
             finally
             {
@@ -163,8 +215,8 @@ namespace Pontor
             messages = messages.Take(messages.Count() - 1).ToArray();
             foreach (String str in messages)
             {
-              ////  WriteToConsole(str);
-               DistanceMessage(str);
+                ////  WriteToConsole(str);
+                DistanceMessage(str);
             }
         }
 
@@ -291,16 +343,39 @@ namespace Pontor
                 }
         }
 
+        private void TimerForBluetoothConnection()
+        {
+            System.Timers.Timer timerBT = new System.Timers.Timer();
+            timerBT.AutoReset = false;
+            timerBT.Elapsed += new ElapsedEventHandler(bluetoothCheckConnection);
+            timerBT.Interval = 10000;
+            timerBT.Start();
+        }
+
+        private void bluetoothCheckConnection(object sender, ElapsedEventArgs e)
+        {
+            if (isBluetoothConnected) return;
+            DisconnectFromBluetooth();
+        }
+
         public void DisconnectFromBluetooth()
         {
-            serialPort.Write("BYEbye");
-            isBluetoothConnected = false;
-            RemoveComPort();
+            try
+            {
+                serialPort.Write("BYEbye");
+                isBluetoothConnected = false;
+                message = "";
+                Connect.IsEnabled = true;
+                Disconnect.IsEnabled = false;
+                RemoveComPort();
+            }
+            catch (Exception)
+            { }
         }
 
         private void RemoveComPort()
         {
-            var s = "Connected to the wrong device...Closing connection to " + bluetoothDeviceName;
+            var s = "Bluetooth : Closing connection to " + bluetoothDeviceName;
             WriteToConsole(s);
             if (serialPort.IsOpen)
                 serialPort.Close();
@@ -347,41 +422,6 @@ namespace Pontor
             });
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Thread t = new Thread(() =>
-              {
-
-                  Thread.Sleep(1000);
-                  if (serialPort != null && serialPort.IsOpen)
-                  {
-                      DisconnectFromBluetooth();
-                      //serialPort.Close();
-                  }
-                  try
-                  {
-                      serialPort = new SerialPort("COM6", 9600);
-                      serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
-                      serialPort.NewLine = "\r\n";
-                      WriteToConsole("Bluetooth : Atempting to connect to " + "...");
-                      serialPort.Open();
-                      Thread.Sleep(100);
-                      serialPort.Write("WHO AM I");
-                      WriteToConsole("Bluetooth : Connection opened to ");
-                      isBluetoothConnected = false;
-                  }
-                  catch (Exception ex)
-                  {
-                      if (serialPort.IsOpen)
-                          serialPort.Close();
-                      MessageBox.Show(ex.ToString());
-                  }
-                  finally
-                  {
-
-                  }
-              }); t.Start();
-        }
 
         private void Connect_Click(object sender, RoutedEventArgs e)
         {
@@ -396,15 +436,17 @@ namespace Pontor
                 }
                 try
                 {
-                    serialPort = new SerialPort("COM6", 9600);
+                    serialPort = new SerialPort(bluetoothDevicePort, 9600);
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
                     serialPort.NewLine = "\r\n";
-                    WriteToConsole("Bluetooth : Atempting to connect to " + "...");
+                    WriteToConsole("Bluetooth : Atempting to connect to " + bluetoothDeviceName);
                     serialPort.Open();
                     Thread.Sleep(100);
                     serialPort.Write("WHO AM I");
-                    WriteToConsole("Bluetooth : Connection opened to ");
+                    WriteToConsole("Bluetooth : Connection opened to " + bluetoothDeviceName);
                     isBluetoothConnected = false;
+                    TimerForBluetoothConnection();
+
                 }
                 catch (Exception ex)
                 {
@@ -417,10 +459,14 @@ namespace Pontor
 
                 }
             }); t.Start();
+            Connect.IsEnabled = false;
+            Disconnect.IsEnabled = true;
         }
 
         private void Disconnect_Click(object sender, RoutedEventArgs e)
         {
+            Disconnect.IsEnabled = false;
+            Connect.IsEnabled = true;
             if (serialPort != null && serialPort.IsOpen)
             {
                 DisconnectFromBluetooth();
@@ -431,11 +477,11 @@ namespace Pontor
         List<Image<Gray, byte>> medianDetectedFacesList = new List<Image<Gray, byte>>();
         List<int> medianDetectedIdList = new List<int>();
 
-        public void getMedianFaceRecognition(Image<Gray,byte> image,int id)
+        public void getMedianFaceRecognition(Image<Gray, byte> image, int id)
         {
             if (!isPersonInRange) return;
             if (id == -1) return;
-            if(medianDetectedFacesList.Count==10 && medianDetectedIdList.Count==10)
+            if (medianDetectedFacesList.Count == 10 && medianDetectedIdList.Count == 10)
             {
                 ProcessTheMedianLists();
                 medianDetectedFacesList.Clear();
@@ -450,11 +496,11 @@ namespace Pontor
 
         private void ProcessTheMedianLists()
         {
-            WriteToConsole("proccesthemedianlist");
+            ////WriteToConsole("proccesthemedianlist");
             int idWithMostOccurences = medianDetectedIdList[0];
             int value = -1;
             var idOccurrences = medianDetectedIdList.GroupBy(i => i).ToDictionary(g => g.Key, g => g.Count());
-            foreach(var idOccurrence in idOccurrences)
+            foreach (var idOccurrence in idOccurrences)
             {
                 if (idOccurrence.Value > value)
                 {
@@ -464,20 +510,32 @@ namespace Pontor
             }
             if (value >= 8)
             {
-                MessageBox.Show(value.ToString());
-                AddDetectedFaceToDisplay(medianDetectedFacesList[medianDetectedIdList.IndexOf(idWithMostOccurences)]);
+                Image<Gray, byte> img = medianDetectedFacesList[medianDetectedIdList.IndexOf(idWithMostOccurences)];
+                AddDetectedFaceToDisplay(img);
+                AddDetectedFacesToSaveList(img, idWithMostOccurences);
             }
             ////throw new NotImplementedException();
         }
 
-        public void AddDetectedFaceToDisplay(Image<Gray,byte> detectedFace)
+        private void AddDetectedFacesToSaveList(Image<Gray, byte> img, int idWithMostOccurences)
+        {
+            try
+            {
+                toBeSaved.Add(idWithMostOccurences, img);
+            }
+            catch (ArgumentException e)
+            { }
+            ////throw new NotImplementedException();
+        }
+
+        public void AddDetectedFaceToDisplay(Image<Gray, byte> detectedFace)
         {
             if (!isPersonInRange) return;
             Dispatcher.Invoke(() =>
             {
-            ImageSource imageSource = ConvertToImageSource(detectedFace.ToBitmap());
-            Border border = new Border() { Padding = new Thickness(5) };
-            border.Child = new System.Windows.Controls.Image() { Source = imageSource, Width = 95, Height = 95 };
+                ImageSource imageSource = ConvertToImageSource(detectedFace.ToBitmap());
+                Border border = new Border() { Padding = new Thickness(5) };
+                border.Child = new System.Windows.Controls.Image() { Source = imageSource, Width = 95, Height = 95 };
                 displayDetectedFaces.Children.Add(border);
             });
             WriteToConsole("Added face to console");

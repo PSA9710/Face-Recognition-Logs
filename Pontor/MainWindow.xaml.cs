@@ -88,11 +88,12 @@ namespace Pontor
             cudaClassifierFileName = location + "/haarcascade_frontalface_alt_GPU.xml";
             CreateDirectory(location, "data");
             CreateDirectory(location, "pictures");
+            CreateDirectory(location, "Logs-Pictures");
 
 
             SwitchToPredictMode();
             pathToSavePictures = location + "/pictures";
-            new SqlManager().SQL_CheckforDatabase();
+            SqlManager.SQL_CheckforDatabase();
 
             //loads model otherwise trains it
             if (!CheckForModel())
@@ -200,7 +201,7 @@ namespace Pontor
             Thread t = new Thread(() =>
               {
                   location += "/pictures";
-                  int count = Directory.GetFiles(location).Length;
+                  int count = Directory.GetFiles(location).Length-1;
                   if (count > 0)
                   {
                       WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images.");
@@ -459,7 +460,7 @@ namespace Pontor
             if (!isTraining)
             {
                 var result = faceRecognizer.Predict(image);
-                personName = new SqlManager().SQL_GetPersonName(result.Label.ToString());
+                personName = SqlManager.SQL_GetPersonName(result.Label.ToString());
                 id = result.Label;
 
             }
@@ -534,6 +535,8 @@ namespace Pontor
                 if (predictControl != null)
                     CustomControlContainer.Children.Remove(predictControl);
                 SwitchToTrainingMode();
+                predictControl.timerSave.Stop();
+                predictControl.TimeToSaveFired();
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }
@@ -569,6 +572,7 @@ namespace Pontor
                 {
                     LoadImages(System.AppDomain.CurrentDomain.BaseDirectory);
                 }
+                predictControl.timerSave.Start();
             }
             catch (Exception ex)
             { MessageBox.Show(ex.ToString()); }

@@ -10,18 +10,18 @@ using System.Windows;
 
 namespace Pontor
 {
-    class SqlManager
+    public static class SqlManager
     {
         static String connectionString = "Data Source=data/Database.sqlite;Version=3;";
-        public void SQL_CheckforDatabase()
+        public static void SQL_CheckforDatabase()
         {
             if (!File.Exists("data/Database.sqlite"))
             {
                 try
                 {
                     SQL_CreateDatabase();
-                    SQL_CreatePersonsTable();
-                    SQL_CreateLogsTable();
+                    SQL_CreateTables();
+
                 }
                 catch (Exception e)
                 {
@@ -31,34 +31,39 @@ namespace Pontor
         }
 
 
-        private void SQL_CreateDatabase()
+        private static void SQL_CreateDatabase()
         {
             SQLiteConnection.CreateFile("data/Database.sqlite");
         }
 
-        private void SQL_CreatePersonsTable()
+        private static void SQL_CreateTables()
         {
-
-            using (SQLiteConnection con = new SQLiteConnection(connectionString))
+            try
             {
-                using (SQLiteCommand cmd = new SQLiteCommand(con))
+                using (SQLiteConnection con = new SQLiteConnection(connectionString))
                 {
-                    con.Open();
-                    cmd.CommandText = "CREATE TABLE persons (personID INTEGER PRIMARY KEY, firstname VARCHAR(20),lastname VARCHAR(20),cnp VARCHAR(13))";
-                    cmd.ExecuteNonQuery();
+                    using (SQLiteCommand cmd = new SQLiteCommand(con))
+                    {
+                        con.Open();
+                        cmd.CommandText = "CREATE TABLE persons (personID INTEGER PRIMARY KEY, firstname VARCHAR(20),lastname VARCHAR(20),cnp VARCHAR(13))";
+                        cmd.ExecuteNonQuery();
+                        cmd.CommandText = "CREATE TABLE logs(logID INTEGER PRIMARY KEY, datetime TEXT,personID INTEGER, FOREIGN KEY(personID) REFERENCES persons(personID))";
+                        cmd.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
             }
 
         }
 
-        private void SQL_CreateLogsTable()
-        {
-            throw new NotImplementedException();
-        }
 
-        public void SQL_InsertIntoPersons(String firstName, String lastName, String CNP)
+
+        public static void SQL_InsertIntoPersons(String firstName, String lastName, String CNP)
         {
-            if(SQL_GetPersonId(CNP)!=-1)
+            if (SQL_GetPersonId(CNP) != -1)
             {
                 throw new IndexOutOfRangeException();
             }
@@ -83,7 +88,39 @@ namespace Pontor
             }
         }
 
-        public int SQL_GetPersonId(String CNP)
+        public static long SQL_InsertIntoLogs(String datetime, int id)
+        {
+            if (id < 1)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            try
+            {
+                using (SQLiteConnection con = new SQLiteConnection(connectionString))
+                using (SQLiteCommand cmd = new SQLiteCommand(con))
+                {
+                    con.Open();
+                    cmd.CommandText = "INSERT INTO logs (datetime,personID) VALUES ($datetime,$personID)";
+                    cmd.Parameters.AddWithValue("$datetime", datetime);
+                    cmd.Parameters.AddWithValue("personID", id);
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = "SELECT last_insert_rowid()";
+                    long value = (long) cmd.ExecuteScalar();
+                    return value;
+
+
+                    
+                }
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+            return -1;
+            
+        }
+
+        public static int SQL_GetPersonId(String CNP)
         {
             try
             {
@@ -95,7 +132,7 @@ namespace Pontor
                         cmd.CommandText = "SELECT personID from persons where cnp=$cnp";
                         cmd.Parameters.AddWithValue("$cnp", CNP);
                         var personId = cmd.ExecuteScalar();
-                        if(personId!=null)
+                        if (personId != null)
                         {
                             return (int)(Int64)personId;
                         }
@@ -109,7 +146,7 @@ namespace Pontor
             return -1;
         }
 
-        public string SQL_GetPersonName(string id)
+        public static string SQL_GetPersonName(string id)
         {
             int ID = Convert.ToInt32(id);
             using (SQLiteConnection con = new SQLiteConnection(connectionString))
@@ -121,11 +158,11 @@ namespace Pontor
                 SQLiteDataReader reader = cmd.ExecuteReader();
                 if (reader.Read())
                 {
-                    string name = reader["firstname"].ToString() + " "+reader["lastname"].ToString();
+                    string name = reader["firstname"].ToString() + " " + reader["lastname"].ToString();
                     return name;
                 }
             }
-                return "UNKNOWN";
+            return "UNKNOWN";
         }
     }
 }

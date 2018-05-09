@@ -105,7 +105,7 @@ namespace Pontor
             if (SaveInDatabase(firstName, lastName, CNP))
             {
 
-                int id = new SqlManager().SQL_GetPersonId(CNP);
+                int id = SqlManager.SQL_GetPersonId(CNP);
                 if (id == -1)
                 {
                     MessageBox.Show("IMPOSIBLE! The ID is negative! Bring holy water!");
@@ -162,7 +162,7 @@ namespace Pontor
             {
                 try
                 {
-                    new SqlManager().SQL_InsertIntoPersons(firstName, lastName, CNP);
+                    SqlManager.SQL_InsertIntoPersons(firstName, lastName, CNP);
                     return true;
                 }
                 catch (IndexOutOfRangeException e)
