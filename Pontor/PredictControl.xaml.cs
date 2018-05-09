@@ -42,7 +42,8 @@ namespace Pontor
 
         List<Image<Gray, byte>> images = new List<Image<Gray, byte>>();
         public SerialPort serialPort;
-        bool isBluetoothConnected = false;
+        public bool isBluetoothConnected = false;
+        public bool isArduinoEnabled = false;
         Dictionary<String, String> bluetoothDevices = new Dictionary<string, string>();
         TextBlock ConsoleOutput;
         ScrollViewer consoleScrollViewer;
@@ -425,40 +426,8 @@ namespace Pontor
 
         private void Connect_Click(object sender, RoutedEventArgs e)
         {
-            Thread t = new Thread(() =>
-            {
-
-                Thread.Sleep(1000);
-                if (serialPort != null && serialPort.IsOpen)
-                {
-                    DisconnectFromBluetooth();
-                    //serialPort.Close();
-                }
-                try
-                {
-                    serialPort = new SerialPort(bluetoothDevicePort, 9600);
-                    serialPort.DataReceived += new SerialDataReceivedEventHandler(MessageReciever);
-                    serialPort.NewLine = "\r\n";
-                    WriteToConsole("Bluetooth : Atempting to connect to " + bluetoothDeviceName);
-                    serialPort.Open();
-                    Thread.Sleep(100);
-                    serialPort.Write("WHO AM I");
-                    WriteToConsole("Bluetooth : Connection opened to " + bluetoothDeviceName);
-                    isBluetoothConnected = false;
-                    TimerForBluetoothConnection();
-
-                }
-                catch (Exception ex)
-                {
-                    if (serialPort.IsOpen)
-                        serialPort.Close();
-                    MessageBox.Show(ex.ToString());
-                }
-                finally
-                {
-
-                }
-            }); t.Start();
+            Thread t = new Thread(()=>{ConnectToComPort(bluetoothDevicePort); });
+            t.Start();
             Connect.IsEnabled = false;
             Disconnect.IsEnabled = true;
         }

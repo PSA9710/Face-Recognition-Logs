@@ -201,7 +201,7 @@ namespace Pontor
             Thread t = new Thread(() =>
               {
                   location += "/pictures";
-                  int count = Directory.GetFiles(location).Length-1;
+                  int count = Directory.GetFiles(location).Length - 1;
                   if (count > 0)
                   {
                       WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images.");
@@ -346,27 +346,30 @@ namespace Pontor
                 {
                     using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
                     {
-                        Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
-                        foreach (Rectangle face in faces)
+                        if ((predictControl.ArduinoEnabled.IsChecked == true && predictControl.isBluetoothConnected) || predictControl.ArduinoEnabled.IsChecked == false)
                         {
-                            using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                            Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
+                            foreach (Rectangle face in faces)
                             {
-                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
-                                if (isRegistering)
+                                using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
                                 {
-                                    Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
+                                    capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+                                    if (isRegistering)
+                                    {
+                                        Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
+                                    }
+                                    else
+                                    {
+                                        int id = -1;
+                                        var personName = PredictFace(graycopy, out id);
+                                        predictControl.getMedianFaceRecognition(graycopy, id);
+                                        //place name of the person on the image
+                                        CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
+                                    }
                                 }
-                                else
-                                {
-                                    int id = -1;
-                                    var personName = PredictFace(graycopy,out id);
-                                    predictControl.getMedianFaceRecognition(graycopy, id);
-                                    //place name of the person on the image
-                                    CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
-                                }
-                            }
-                            //imageDisplay.Image = capturedImage;
+                                //imageDisplay.Image = capturedImage;
 
+                            }
                         }
                     }
                 }
@@ -402,23 +405,26 @@ namespace Pontor
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
                 {
-                    Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
-                    foreach (Rectangle face in faces)
+                    if ((predictControl.ArduinoEnabled.IsChecked==true && predictControl.isBluetoothConnected) || predictControl.ArduinoEnabled.IsChecked == false)
                     {
-                        using (var graycopy = grayCapturedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                        Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
+                        foreach (Rectangle face in faces)
                         {
-                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
-                            if (isRegistering)
+                            using (var graycopy = grayCapturedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
                             {
-                                Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
-                            }
-                            else
-                            {
-                                int id=-1;
-                                var personName = PredictFace(graycopy,out id);
-                                predictControl.getMedianFaceRecognition(graycopy, id);
-                                //place name of the person on the image
-                                CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
+                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+                                if (isRegistering)
+                                {
+                                    Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
+                                }
+                                else
+                                {
+                                    int id = -1;
+                                    var personName = PredictFace(graycopy, out id);
+                                    predictControl.getMedianFaceRecognition(graycopy, id);
+                                    //place name of the person on the image
+                                    CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
+                                }
                             }
                         }
                     }
@@ -454,7 +460,7 @@ namespace Pontor
                 }
         }
 
-        private String PredictFace(Image<Gray, byte> image,out int id)
+        private String PredictFace(Image<Gray, byte> image, out int id)
         {
             String personName;
             if (!isTraining)
