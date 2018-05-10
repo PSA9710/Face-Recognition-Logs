@@ -479,7 +479,12 @@ namespace Pontor
         private String PredictFace(Image<Gray, byte> image, out int id)
         {
             String personName;
-            if (!isTraining)
+            if (!wasTrained)
+            {
+                id = -1;
+                personName = "UNKOWN";
+            }
+            else if (!isTraining)
             {
                 var result = faceRecognizer.Predict(image);
                 personName = SqlManager.SQL_GetPersonName(result.Label.ToString());
@@ -491,6 +496,7 @@ namespace Pontor
                 personName = "IN-TRAINING";
                 id = -1;
             }
+
             return personName;
         }
 
@@ -635,7 +641,7 @@ namespace Pontor
                 WriteToConsole("Saving Model");
                 faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
             }
-            predictControl.TimeToSaveFired(); 
+            predictControl.TimeToSaveFired();
         }
 
         private void WriteToConsole(string message)
