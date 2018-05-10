@@ -429,18 +429,30 @@ namespace Pontor
                         foreach (Rectangle face in faces)
                         {
                             var grayCopy = equalizedGrayCapturedImage.Copy(face);
+
+                            var mouths = FaceProcessing.DetectMouth(grayCopy);
+                            foreach (Rectangle mouth in mouths)
+                            {
+                                Rectangle mth = new Rectangle(face.X + mouth.X, face.Y + face.Height / 2 + mouth.Y, mouth.Width, mouth.Height);
+                                capturedImage.Draw(mth, new Bgr(0, 255, 0), 2);
+                            }
+
+
                             var eyes = FaceProcessing.AlignFace(grayCopy, out double degreesToRotateFace);
                             foreach (Rectangle eye in eyes)
                             {
                                 Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
                                 capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
                             }
+                            Rectangle faceRect = face;
+                            if (mouths != null && eyes != null && eyes.Length == 2 && mouths.Length == 1)
+                                faceRect = FaceProcessing.GetABetterFace(eyes, mouths[0], face.X, face.Y);
+                            capturedImage.Draw(faceRect, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
 
-                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+
 
                             var rotatedGrayCapturedImage = equalizedGrayCapturedImage.Rotate(degreesToRotateFace, new Gray(220));
-                            grayCopy = rotatedGrayCapturedImage.Copy(face);
-                            //ADD THIS SOMEHWERE
+                            grayCopy = rotatedGrayCapturedImage.Copy(faceRect);
                             grayCopy = grayCopy.Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
 
 
