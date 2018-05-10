@@ -152,7 +152,7 @@ namespace Pontor
                 Thread t = new Thread(() => ConnectToComPort(bluetoothDevicePort));
                 t.Start();
 
-                Disconnect.IsEnabled = true;
+                Disconnect.IsEnabled = false;
                 Connect.IsEnabled = false;
             }
 
@@ -182,6 +182,12 @@ namespace Pontor
             {
                 if (serialPort.IsOpen)
                     serialPort.Close();
+                Dispatcher.Invoke(() =>
+                {
+                    Disconnect.IsEnabled = false;
+                    Connect.IsEnabled = true;
+                    RemoveComPort();
+                });
                 MessageBox.Show("Please reconnect the device to the PC");
             }
             finally
@@ -335,6 +341,10 @@ namespace Pontor
                     isBluetoothConnected = true;
                     serialPort.Write("OK");
                     message = null;
+                    Dispatcher.Invoke(() =>
+                    {
+                        Disconnect.IsEnabled = true;
+                    });
                 }
                 else
                 {
@@ -372,7 +382,8 @@ namespace Pontor
             {
                 isBluetoothConnected = false;
                 message = "";
-                Dispatcher.Invoke(() => {
+                Dispatcher.Invoke(() =>
+                {
                     Connect.IsEnabled = true;
                     Disconnect.IsEnabled = false;
                 });
@@ -390,7 +401,20 @@ namespace Pontor
 
         }
 
+        public void AppCloseBluetoothClose()
+        {
+            if (serialPort.IsOpen && serialPort != null)
+            {
 
+                try
+                {
+                    serialPort.Write("BYEbye");
+                    //serialPort.Close();
+                }
+                catch (Exception e)
+                { MessageBox.Show("error"); }
+            }
+        }
         private string GetBluetoothPort(string deviceAddress)
         {
             const string Win32_SerialPort = "Win32_SerialPort";
@@ -435,7 +459,7 @@ namespace Pontor
             Thread t = new Thread(() => { ConnectToComPort(bluetoothDevicePort); });
             t.Start();
             Connect.IsEnabled = false;
-            Disconnect.IsEnabled = true;
+            ;
         }
 
         private void Disconnect_Click(object sender, RoutedEventArgs e)

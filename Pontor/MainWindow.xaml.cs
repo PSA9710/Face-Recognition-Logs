@@ -628,7 +628,7 @@ namespace Pontor
             }
             if (predictControl.serialPort != null && predictControl.serialPort.IsOpen)
             {
-                predictControl.DisconnectFromBluetooth();
+                predictControl.AppCloseBluetoothClose();
             }
             if (WebCam != null && WebCam.IsOpened)
             {
@@ -642,6 +642,7 @@ namespace Pontor
                 faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
             }
             predictControl.TimeToSaveFired();
+            Environment.Exit(0);
         }
 
         private void WriteToConsole(string message)
