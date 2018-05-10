@@ -52,7 +52,7 @@ namespace Pontor
 
 
         public String message;
-        private bool isPersonInRange = true;
+        public bool isPersonInRange = true;
 
         public event EventHandler MessageRecieved;
         public System.Timers.Timer timerSave = new System.Timers.Timer();
@@ -372,9 +372,10 @@ namespace Pontor
             {
                 isBluetoothConnected = false;
                 message = "";
-                Dispatcher.Invoke(() => { Connect.IsEnabled = true;
-                Disconnect.IsEnabled = false;
-            });
+                Dispatcher.Invoke(() => {
+                    Connect.IsEnabled = true;
+                    Disconnect.IsEnabled = false;
+                });
                 RemoveComPort();
             }
         }
@@ -431,7 +432,7 @@ namespace Pontor
 
         private void Connect_Click(object sender, RoutedEventArgs e)
         {
-            Thread t = new Thread(()=>{ConnectToComPort(bluetoothDevicePort); });
+            Thread t = new Thread(() => { ConnectToComPort(bluetoothDevicePort); });
             t.Start();
             Connect.IsEnabled = false;
             Disconnect.IsEnabled = true;

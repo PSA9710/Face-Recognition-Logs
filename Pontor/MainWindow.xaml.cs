@@ -45,7 +45,7 @@ namespace Pontor
         int[] personID;
         EigenFaceRecognizer faceRecognizer = new EigenFaceRecognizer(90, 2500);
 
-
+        private bool wasTrained = false;
         int sizeToBeSaved = 100;//size of the picture wich will be saved
 
         //WebCameraControl WebCam;
@@ -192,6 +192,7 @@ namespace Pontor
                 faceRecognizer.Train(trainingImages, personID);
                 WriteToConsole("FaceRecognizer : Finished Training");
                 isTraining = false;
+                wasTrained = true;
             });
             t.Start();
             //faceRecognizer.Write("/data/ceva");
@@ -200,40 +201,40 @@ namespace Pontor
 
         public void LoadImages(String location)
         {
-            isTraining = true;
             Thread t = new Thread(() =>
-              {
-                  location += "/pictures";
-                  int count = Directory.GetFiles(location).Length - 1;
-                  if (count > 0)
-                  {
-                      WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images.");
-                      WriteToConsole("FaceRecognizer : Loading Images...");
-                  }
-                  trainingImages = new Image<Gray, byte>[count];
-                  personID = new int[count];
-                  int i = 0;
-                  foreach (string file in Directory.EnumerateFiles(location, "*.bmp"))
-                  {
-                      trainingImages[i] = new Image<Gray, byte>(file);
-                      string filename = Path.GetFileName(file);
-                      var fileSplit = filename.Split('_');
-                      int personid = Convert.ToInt32(fileSplit[0]);
-                      personID[i] = personid;
-                      i++;
-                      imagesFound = true;
-                  }
-                  if (!imagesFound)
-                  {
-                      MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
-                      Dispatcher.Invoke(() => { ModeSelector.IsChecked = true; });
-                  }
-                  if (imagesFound)
-                  {
-                      WriteToConsole("FaceRecognizer : Images Loaded succesfully");
-                      TrainFaceRecognizer();
-                  }
-              });
+            {
+                location += "/pictures";
+                int count = Directory.GetFiles(location).Length;
+                if (count > 0)
+                {
+                    WriteToConsole("FaceRecognizer : Found " + count.ToString() + " images.");
+                    WriteToConsole("FaceRecognizer : Loading Images...");
+                    isTraining = true;
+                }
+                trainingImages = new Image<Gray, byte>[count];
+                personID = new int[count];
+                int i = 0;
+                foreach (string file in Directory.EnumerateFiles(location, "*.bmp"))
+                {
+                    trainingImages[i] = new Image<Gray, byte>(file);
+                    string filename = Path.GetFileName(file);
+                    var fileSplit = filename.Split('_');
+                    int personid = Convert.ToInt32(fileSplit[0]);
+                    personID[i] = personid;
+                    i++;
+                    imagesFound = true;
+                }
+                if (!imagesFound)
+                {
+                    MessageBox.Show("No pictures were found, please register a person", "Data not available", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Dispatcher.Invoke(() => { ModeSelector.IsChecked = true; });
+                }
+                if (imagesFound)
+                {
+                    WriteToConsole("FaceRecognizer : Images Loaded succesfully");
+                    TrainFaceRecognizer();
+                }
+            });
             t.Start();
 
         }
@@ -264,7 +265,7 @@ namespace Pontor
             try
             {
                 Mat m = new Mat();
-                
+
                 WebCam.Retrieve(m);
                 if (m != null)
                     if (isCudaEnabled && isGpuEnabled)
@@ -278,7 +279,7 @@ namespace Pontor
                         ProcessWithCPU(m);
                     }
             }
-            catch(System.AccessViolationException exx)
+            catch (System.AccessViolationException exx)
             { }
             catch (Exception ex)
             {
@@ -286,7 +287,7 @@ namespace Pontor
             }
 
         }
-        
+
         private void Start_Click(object sender, RoutedEventArgs e)
         {
             if (StreamingOptions.SelectedIndex == -1)
@@ -304,22 +305,22 @@ namespace Pontor
             url += IP4.Text;
             url += ":8080/video";
             Thread t = new Thread(() =>
-              {
-                  if (option == "VIA IP")
-                  {
-                      WebCam = new VideoCapture(url);
-                      WriteToConsole("Camera : Connected to external camera");
-                  }
-                  else
-                  {
-                      // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
-                      WebCam =  videoCaptures[Convert.ToInt32(option)];
-                      WriteToConsole("Camera : Connected to internal camera");
-                  }
-                  WebCam.ImageGrabbed += WebCam_ImageGrabbed;
-                  //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
-                  WebCam.Start();
-              });
+            {
+                if (option == "VIA IP")
+                {
+                    WebCam = new VideoCapture(url);
+                    WriteToConsole("Camera : Connected to external camera");
+                }
+                else
+                {
+                    // int id = Convert.ToInt32(StreamingOptions.SelectedItem);
+                    WebCam = videoCaptures[Convert.ToInt32(option)];
+                    WriteToConsole("Camera : Connected to internal camera");
+                }
+                WebCam.ImageGrabbed += WebCam_ImageGrabbed;
+                //WebCam.SetCaptureProperty(CapProp.Buffersuze, 3);
+                WebCam.Start();
+            });
             t.Start();
             startCameraFeed.IsEnabled = false;
             stopCameraFeed.IsEnabled = true;
@@ -334,15 +335,15 @@ namespace Pontor
                 {
                     WriteToConsole("Camera : Camera stopped");
                     WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
-                    if(WebCam.IsOpened)
-                    WebCam.Stop();
+                    if (WebCam.IsOpened)
+                        WebCam.Stop();
                     //if(StreamingOptions.SelectedValue.ToString()!="VIA IP")
                     //  WebCam.Dispose();
                 }
                 startCameraFeed.IsEnabled = true;
                 stopCameraFeed.IsEnabled = false;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
@@ -361,7 +362,7 @@ namespace Pontor
                 {
                     using (CudaImage<Gray, byte> cudaGrayImage = cudaCapturedImage.Convert<Gray, byte>())
                     {
-                        if ((predictControl.isArduinoEnabled == true && predictControl.isBluetoothConnected) || predictControl.isArduinoEnabled == false)
+                        if ((predictControl.isArduinoEnabled == true && predictControl.isPersonInRange) || predictControl.isArduinoEnabled == false)
                         {
                             Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
                             foreach (Rectangle face in faces)
@@ -420,7 +421,7 @@ namespace Pontor
             {
                 using (Image<Gray, byte> grayCapturedImage = capturedImage.Convert<Gray, byte>())
                 {
-                    if ((predictControl.isArduinoEnabled==true && predictControl.isBluetoothConnected) || predictControl.isArduinoEnabled == false)
+                    if ((predictControl.isArduinoEnabled == true && predictControl.isPersonInRange) || predictControl.isArduinoEnabled == false)
                     {
                         Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
                         foreach (Rectangle face in faces)
@@ -445,7 +446,7 @@ namespace Pontor
                     }
                     //imageDisplay.Image = capturedImage;
                     Dispatcher.Invoke(() =>
-                        { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
+                    { imageDisplay.Source = ConvertToImageSource(capturedImage.ToBitmap()); });
                 }
             }
             ////sw.Stop();
@@ -623,17 +624,18 @@ namespace Pontor
             {
                 predictControl.DisconnectFromBluetooth();
             }
-            if (WebCam != null)
+            if (WebCam != null && WebCam.IsOpened)
             {
+                // WebCam.ImageGrabbed -= WebCam_ImageGrabbed;
                 WebCam.Stop();
                 //WebCam.Dispose();
             }
-            if (faceRecognizer != null && !isTraining)
+            if (wasTrained)
             {
                 WriteToConsole("Saving Model");
                 faceRecognizer.Write(appLocation + "/data/faceRecognizerModel.cv");
             }
-            Environment.Exit(0);
+            predictControl.TimeToSaveFired(); 
         }
 
         private void WriteToConsole(string message)
@@ -754,5 +756,9 @@ namespace Pontor
             }
         }
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            Environment.Exit(0);
+        }
     }
 }

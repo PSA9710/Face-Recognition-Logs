@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="MainWindow" Closing="Window_Closing" MinWidth="1280" MinHeight="720" Background="#FFACACAC" WindowStartupLocation="CenterScreen" SourceInitialized="Window_SourceInitialized" Height="720" Width="1280">
+        Title="MainWindow" Closing="Window_Closing" MinWidth="1280" MinHeight="720" Background="#FFACACAC" WindowStartupLocation="CenterScreen" SourceInitialized="Window_SourceInitialized" Height="720" Width="1280" Closed="Window_Closed">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="3*"/>
