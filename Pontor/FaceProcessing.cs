@@ -9,10 +9,11 @@ using Emgu.CV.Structure;
 
 namespace Pontor
 {
-    public static class FaceAligner
+    public static class FaceProcessing
     {
         static String location = AppDomain.CurrentDomain.BaseDirectory;
         private static CascadeClassifier cpuEyeClassifier = new CascadeClassifier(location + "/haarcascade_eye_tree_eyeglasses_CPU.xml");
+
 
         public static Rectangle[] AlignFace(Image<Gray, byte> imageToAlign, out double degreesToRotateImage)
         {
@@ -47,6 +48,11 @@ namespace Pontor
             var degrees = Math.Atan2(deltaY, deltaX) * 180 / Math.PI;
             degrees = 180 - degrees;
             return degrees;
+        }
+
+        public static Rectangle CalculateImprovedFace()
+        {
+            return new Rectangle(); 
         }
     }
 }

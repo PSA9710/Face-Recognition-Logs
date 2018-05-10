@@ -113,7 +113,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="FaceAligner.cs" />
+    <Compile Include="FaceProcessing.cs" />
     <Compile Include="PredictControl.xaml.cs">
       <DependentUpon>PredictControl.xaml</DependentUpon>
     </Compile>

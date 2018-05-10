@@ -423,46 +423,38 @@ namespace Pontor
                 {
                     if ((predictControl.isArduinoEnabled == true && predictControl.isPersonInRange) || predictControl.isArduinoEnabled == false)
                     {
+                        Image<Gray, byte> equalizedGrayCapturedImage = grayCapturedImage;
+                        CvInvoke.EqualizeHist(grayCapturedImage, equalizedGrayCapturedImage);
                         Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
                         foreach (Rectangle face in faces)
                         {
-                           //// MessageBox.Show(face.ToString());
-                        //    using (var graycopy = grayCapturedImage.Copy(face))
+                            var grayCopy = equalizedGrayCapturedImage.Copy(face);
+                            var eyes = FaceProcessing.AlignFace(grayCopy, out double degreesToRotateFace);
+                            foreach (Rectangle eye in eyes)
                             {
+                                Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
+                                capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
+                            }
 
-                                //ADJUST BRIGHTNESS
-                                //CvInvoke.EqualizeHist(graycopy, graycopy);
+                            capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
 
-
-                                var grayCopy = grayCapturedImage.Copy(face);
-                                double degreesToRotateFace;
-                                var eyes = FaceAligner.AlignFace(grayCopy,out degreesToRotateFace);
-                                foreach(Rectangle eye in eyes)
-                                {
-                                    Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
-                                    capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
-                                }
-
-                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
-
-                                var rotatedGrayCapturedImage = grayCapturedImage.Rotate(degreesToRotateFace,new Gray(220));
-                                grayCopy = rotatedGrayCapturedImage.Copy(face);
-                                //ADD THIS SOMEHWERE
-                                grayCopy = grayCopy.Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
+                            var rotatedGrayCapturedImage = equalizedGrayCapturedImage.Rotate(degreesToRotateFace, new Gray(220));
+                            grayCopy = rotatedGrayCapturedImage.Copy(face);
+                            //ADD THIS SOMEHWERE
+                            grayCopy = grayCopy.Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
 
 
-                                if (isRegistering)
-                                {
-                                    Dispatcher.Invoke(() => { AddPicturesToCollection(grayCopy); });
-                                }
-                                else
-                                {
-                                    int id = -1;
-                                    var personName = PredictFace(grayCopy, out id);
-                                    predictControl.getMedianFaceRecognition(grayCopy, id);
-                                    //place name of the person on the image
-                                    CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
-                                }
+                            if (isRegistering)
+                            {
+                                Dispatcher.Invoke(() => { AddPicturesToCollection(grayCopy); });
+                            }
+                            else
+                            {
+                                int id = -1;
+                                var personName = PredictFace(grayCopy, out id);
+                                predictControl.getMedianFaceRecognition(grayCopy, id);
+                                //place name of the person on the image
+                                CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                             }
                         }
                     }
