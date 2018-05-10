@@ -427,28 +427,26 @@ namespace Pontor
                         foreach (Rectangle face in faces)
                         {
                            //// MessageBox.Show(face.ToString());
-                            using (var graycopy = grayCapturedImage.Copy(face))
+                        //    using (var graycopy = grayCapturedImage.Copy(face))
                             {
-                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
 
                                 //ADJUST BRIGHTNESS
                                 //CvInvoke.EqualizeHist(graycopy, graycopy);
-                                var grayCopy = graycopy.Clone();
-                                var eyes = FaceAligner.AlignFace(grayCopy,out grayCopy);
+
+
+                                var grayCopy = grayCapturedImage.Copy(face);
+                                double degreesToRotateFace;
+                                var eyes = FaceAligner.AlignFace(grayCopy,out degreesToRotateFace);
                                 foreach(Rectangle eye in eyes)
                                 {
-                                    //MessageBox.Show(sda.ToString());
-                                    var x = face.X;
-                                    var y = face.Y;
-                                    var scaleX= face.Width / sizeToBeSaved;
-                                    var scaleY= face.Height / sizeToBeSaved;
-                                    x += eye.X;
-                                    y += eye.Y;
-                                    Rectangle rtc = new Rectangle(x, y, eye.Width, eye.Height);
-                                    capturedImage.Draw(rtc, new Bgr(0, 0, 255), 2);
+                                    Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
+                                    capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
                                 }
 
+                                capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
 
+                                var rotatedGrayCapturedImage = grayCapturedImage.Rotate(degreesToRotateFace,new Gray(220));
+                                grayCopy = rotatedGrayCapturedImage.Copy(face);
                                 //ADD THIS SOMEHWERE
                                 grayCopy = grayCopy.Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
 

@@ -46,7 +46,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                         <StackPanel Orientation="Horizontal">
                             <Label Content="Video Source:" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            <ComboBox Name="StreamingOptions" SelectedIndex="1" SelectionChanged="StreamingOptions_SelectionChanged" MinWidth="60" VerticalAlignment="Center"/>
+                            <ComboBox Name="StreamingOptions" SelectedIndex="0" SelectionChanged="StreamingOptions_SelectionChanged" MinWidth="60" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Name="webcameraCredentials" Orientation="Horizontal" Margin="10,0,0,0">
                             <StackPanel>
