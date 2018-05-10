@@ -426,18 +426,42 @@ namespace Pontor
                         Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
                         foreach (Rectangle face in faces)
                         {
-                            using (var graycopy = grayCapturedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                           //// MessageBox.Show(face.ToString());
+                            using (var graycopy = grayCapturedImage.Copy(face))
                             {
                                 capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
+
+                                //ADJUST BRIGHTNESS
+                                //CvInvoke.EqualizeHist(graycopy, graycopy);
+                                var grayCopy = graycopy.Clone();
+                                var eyes = FaceAligner.AlignFace(grayCopy,out grayCopy);
+                                foreach(Rectangle eye in eyes)
+                                {
+                                    //MessageBox.Show(sda.ToString());
+                                    var x = face.X;
+                                    var y = face.Y;
+                                    var scaleX= face.Width / sizeToBeSaved;
+                                    var scaleY= face.Height / sizeToBeSaved;
+                                    x += eye.X;
+                                    y += eye.Y;
+                                    Rectangle rtc = new Rectangle(x, y, eye.Width, eye.Height);
+                                    capturedImage.Draw(rtc, new Bgr(0, 0, 255), 2);
+                                }
+
+
+                                //ADD THIS SOMEHWERE
+                                grayCopy = grayCopy.Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
+
+
                                 if (isRegistering)
                                 {
-                                    Dispatcher.Invoke(() => { AddPicturesToCollection(graycopy); });
+                                    Dispatcher.Invoke(() => { AddPicturesToCollection(grayCopy); });
                                 }
                                 else
                                 {
                                     int id = -1;
-                                    var personName = PredictFace(graycopy, out id);
-                                    predictControl.getMedianFaceRecognition(graycopy, id);
+                                    var personName = PredictFace(grayCopy, out id);
+                                    predictControl.getMedianFaceRecognition(grayCopy, id);
                                     //place name of the person on the image
                                     CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                                 }
