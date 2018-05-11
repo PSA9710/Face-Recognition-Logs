@@ -179,8 +179,30 @@
     <Resource Include="CUDA_EULA.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="haarcascade_frontalface_alt_CPU.xml" />
-    <Resource Include="haarcascade_frontalface_alt_GPU.xml" />
+    <Resource Include="haarcascade_frontalface_alt_CPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="haarcascade_frontalface_alt_GPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="haarcascade_smile_CPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="haarcascade_eye_tree_eyeglasses_CPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="haarcascade_eye_tree_eyeglasses_GPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="haarcascade_smile_GPU.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets" Condition="Exists('..\packages\EMGU.CV.3.4.1.2976\build\EMGU.CV.targets')" />
