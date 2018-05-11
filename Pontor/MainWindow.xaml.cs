@@ -367,6 +367,8 @@ namespace Pontor
                             Rectangle[] faces = FindFacesUsingGPU(cudaGrayImage);
                             foreach (Rectangle face in faces)
                             {
+
+                                var eyes = FaceProcessing.CudaDetectEyesAndAngle(cudaGrayImage.GetSubRect(face), out double degreeToRotate);
                                 using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
                                 {
                                     capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
@@ -383,7 +385,14 @@ namespace Pontor
                                         CvInvoke.PutText(capturedImage, personName, new System.Drawing.Point(face.X - 2, face.Y - 2), FontFace.HersheyComplex, 1, new Bgr(0, 255, 0).MCvScalar);
                                     }
                                 }
+
                                 //imageDisplay.Image = capturedImage;
+
+                                foreach(var eye in eyes)
+                                {
+                                    Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
+                                    capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
+                                }
 
                             }
                         }
@@ -439,7 +448,7 @@ namespace Pontor
                             }
 
 
-                            var eyes = FaceProcessing.AlignFace(grayCopy, out double degreesToRotateFace);
+                            var eyes = FaceProcessing.DetectEyesAndAngle(grayCopy, out double degreesToRotateFace);
                             foreach (var eye in eyes)
                             {
                                 Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);

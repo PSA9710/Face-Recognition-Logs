@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Emgu.CV;
+using Emgu.CV.Cuda;
 using Emgu.CV.Structure;
 
 namespace Pontor
@@ -12,10 +13,13 @@ namespace Pontor
     public static class FaceProcessing
     {
         static String location = AppDomain.CurrentDomain.BaseDirectory;
-        private static CascadeClassifier cpuEyeClassifier = new CascadeClassifier(location + "/haarcascade_eye_tree_eyeglasses_CPU.xml");
+        private static CascadeClassifier cpuEyeClassifier = new CascadeClassifier(location + "/haarcascade_eye_CPU.xml");
+        private static CudaCascadeClassifier cudaEyeClassifier = new CudaCascadeClassifier(location + "/haarcascade_eye_GPU.xml");
         private static CascadeClassifier cpuMouthClassifier = new CascadeClassifier(location + "/haarcascade_smile_CPU.xml");
+        private static CudaCascadeClassifier cudaMouthClassifier = new CudaCascadeClassifier(location + "/haarcascade_smile_GPU.xml");
 
-        public static Rectangle[] AlignFace(Image<Gray, byte> imageToAlign, out double degreesToRotateImage)
+
+        public static Rectangle[] DetectEyesAndAngle(Image<Gray, byte> imageToAlign, out double degreesToRotateImage)
         {
             Rectangle[] eyes;
             int height = (int)(imageToAlign.Height / 1.5);
@@ -29,11 +33,11 @@ namespace Pontor
             return eyes;
         }
 
-        private static double GetDegrees( Rectangle[] eyes)
+        private static double GetDegrees(Rectangle[] eyes)
         {
             if (eyes.Count() != 2) return 0;
             Rectangle lEye, rEye;
-            if(eyes[0].X > eyes[1].X)
+            if (eyes[0].X > eyes[1].X)
             {
                 rEye = eyes[0];
                 lEye = eyes[1];
@@ -50,22 +54,22 @@ namespace Pontor
             return degrees;
         }
 
-        public static Rectangle[] DetectMouth(Image<Gray,byte> img)
+        public static Rectangle[] DetectMouth(Image<Gray, byte> img)
         {
 
             Rectangle[] mouths;
             var image = img;
-            using (Image<Gray, byte> lowerFace = image.Copy(new Rectangle(0, image.Height / 2, image.Width, image.Height/2)))
+            using (Image<Gray, byte> lowerFace = image.Copy(new Rectangle(0, image.Height / 2, image.Width, image.Height / 2)))
             //using (Image<Gray, byte> upperFace = imageToAlign.Clone())
             {
-                mouths = cpuMouthClassifier.DetectMultiScale(lowerFace, 1.1, 20, new Size(40,20));
+                mouths = cpuMouthClassifier.DetectMultiScale(lowerFace, 1.1, 20, new Size(40, 20));
             }
-            
+
             return mouths;
         }
 
 
-        public static Rectangle GetABetterFace(Rectangle[] eyes,Rectangle mouth,int x,int y)
+        public static Rectangle GetABetterFace(Rectangle[] eyes, Rectangle mouth, int x, int y)
         {
             Rectangle lEye, rEye;
             if (eyes[0].X > eyes[1].X)
@@ -80,19 +84,50 @@ namespace Pontor
             }
 
             Rectangle betterFace = new Rectangle();
-            betterFace.X = lEye.X - 20+x;
-            betterFace.Y = lEye.Y - 20+y;
+            betterFace.X = lEye.X - 20 + x;
+            betterFace.Y = lEye.Y - 20 + y;
             int distance = mouth.Y - lEye.Y;
-            betterFace.Height = lEye.Height+ distance + mouth.Height + 85;
-            int distanceX = rEye.X -lEye.Width - lEye.X;
+            betterFace.Height = lEye.Height + distance + mouth.Height + 85;
+            int distanceX = rEye.X - lEye.Width - lEye.X;
             betterFace.Width = lEye.Width + rEye.Width + distanceX + 35;
             return betterFace;
 
         }
 
+
+        public static Rectangle[] CudaDetectEyesAndAngle(CudaImage<Gray, byte> face, out double degrees)
+        {
+
+            cudaEyeClassifier.MinNeighbors = 12;
+            cudaEyeClassifier.ScaleFactor = 1.1;
+            try
+            {
+            Rectangle[] eyes;
+                int height = face.Size.Height / 2;
+                using (GpuMat eyeRegionMat = new GpuMat())
+                using (CudaImage<Gray, byte> faceCopy = face.GetSubRect(new Rectangle(0, 0, face.Size.Width, height)))
+                {
+                    cudaEyeClassifier.DetectMultiScale(faceCopy, eyeRegionMat);
+                    eyes = cudaEyeClassifier.Convert(eyeRegionMat);
+                }
+                    degrees = GetDegrees(eyes);
+            return eyes;
+            }
+            catch (Exception) { };
+            degrees = 0;
+            return null;
+        }
+
+
+        public static Rectangle[] CudaDetectMouth(CudaImage<Gray,byte> face)
+        {
+            Rectangle[] mouths;
+            using(CudaImage<Gray,byte> )
+        }
+
         public static Rectangle CalculateImprovedFace()
         {
-            return new Rectangle(); 
+            return new Rectangle();
         }
     }
 }
