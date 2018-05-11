@@ -369,8 +369,13 @@ namespace Pontor
                             {
 
                                 var eyes = FaceProcessing.CudaDetectEyesAndAngle(cudaGrayImage.GetSubRect(face), out double degreeToRotate);
-                                using (var graycopy = capturedImage.Convert<Gray, byte>().Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic))
+                                var mouths = FaceProcessing.CudaDetectMouth(cudaGrayImage.GetSubRect(face));
+                                using (var grayCopy = capturedImage.Convert<Gray, byte>())
                                 {
+
+                                    var rotatedImage = grayCopy.Rotate(degreeToRotate, new Gray(220));
+                                    CvInvoke.EqualizeHist(rotatedImage, rotatedImage);
+                                    var graycopy = rotatedImage.Copy(face).Resize(sizeToBeSaved, sizeToBeSaved, Inter.Cubic);
                                     capturedImage.Draw(face, new Bgr(255, 0, 0), 3);  //draw a rectangle around the detected face
                                     if (isRegistering)
                                     {
@@ -393,7 +398,11 @@ namespace Pontor
                                     Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
                                     capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
                                 }
-
+                                foreach (Rectangle mouth in mouths)
+                                {
+                                    Rectangle mth = new Rectangle(face.X + mouth.X, face.Y + face.Height / 2 + mouth.Y, mouth.Width, mouth.Height);
+                                    capturedImage.Draw(mth, new Bgr(0, 255, 0), 2);
+                                }
                             }
                         }
                     }

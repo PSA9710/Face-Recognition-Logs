@@ -121,8 +121,21 @@ namespace Pontor
 
         public static Rectangle[] CudaDetectMouth(CudaImage<Gray,byte> face)
         {
-            Rectangle[] mouths;
-            using(CudaImage<Gray,byte> )
+            try
+            {
+                Rectangle[] mouths;
+                cudaMouthClassifier.MinNeighbors = 30;
+                cudaMouthClassifier.ScaleFactor = 1.1;
+                using (GpuMat gpuMat = new GpuMat())
+                using (CudaImage<Gray, byte> lowerFace = face.GetSubRect(new Rectangle(0, face.Size.Height / 2, face.Size.Width, face.Size.Height / 2)))
+                {
+                    cudaMouthClassifier.DetectMultiScale(lowerFace, gpuMat);
+                    mouths = cudaMouthClassifier.Convert(gpuMat);
+                }
+                return mouths;
+            }
+            catch (Exception) { }
+            return null;
         }
 
         public static Rectangle CalculateImprovedFace()
