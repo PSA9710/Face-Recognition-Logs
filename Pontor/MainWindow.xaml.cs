@@ -423,9 +423,10 @@ namespace Pontor
                 {
                     if ((predictControl.isArduinoEnabled == true && predictControl.isPersonInRange) || predictControl.isArduinoEnabled == false)
                     {
+                        Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
                         Image<Gray, byte> equalizedGrayCapturedImage = grayCapturedImage;
                         CvInvoke.EqualizeHist(grayCapturedImage, equalizedGrayCapturedImage);
-                        Rectangle[] faces = FindFacesUsingCPU(grayCapturedImage);
+
                         foreach (Rectangle face in faces)
                         {
                             var grayCopy = equalizedGrayCapturedImage.Copy(face);
@@ -439,7 +440,7 @@ namespace Pontor
 
 
                             var eyes = FaceProcessing.AlignFace(grayCopy, out double degreesToRotateFace);
-                            foreach (Rectangle eye in eyes)
+                            foreach (var eye in eyes)
                             {
                                 Rectangle rectangleEye = new Rectangle(face.X + eye.X, face.Y + eye.Y, eye.Width, eye.Height);
                                 capturedImage.Draw(rectangleEye, new Bgr(0, 0, 255), 2);
